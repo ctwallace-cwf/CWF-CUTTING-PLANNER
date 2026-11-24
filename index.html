@@ -13,7 +13,7 @@
 <section class="card"><h2>Job details</h2><div class="grid">
 <div><label>Customer / job name</label><input id="customer" placeholder="Customer name"></div>
 <div><label>Date</label><input id="date" type="date"></div>
-<div><label>Carpet roll width</label><select id="roll"><option value="4">4 metre</option><option value="5">5 metre</option></select></div>
+<div><label>Roll width selection</label><input value="Automatic (4m or 5m)" disabled></div>
 <div><label>Price per m² (£)</label><input id="price" type="number" min="0" step=".01" placeholder="0.00"></div>
 </div></section>
 <section class="card"><h2>Room measurements</h2><p class="muted">Enter the finished room width and length in metres. The planner tries both directions and groups rooms together where they fit across the roll.</p><div id="rooms"></div><div class="no-print"><button class="gold" id="add">+ Add room</button><button id="calc">Calculate cutting plan</button></div></section>
@@ -30,75 +30,82 @@ const list=document.getElementById('rooms');
 function addRoom(){const row=document.createElement('div');row.className='room';row.innerHTML='<div><label>Room name</label><input class="name" placeholder="Lounge"></div><div><label>Width (m)</label><input class="w" type="number" min=".01" step=".01" placeholder="3.50"></div><div><label>Length (m)</label><input class="l" type="number" min=".01" step=".01" placeholder="4.20"></div><button class="remove no-print" type="button" aria-label="Remove room">×</button>';row.querySelector('button').onclick=()=>row.remove();list.appendChild(row)}
 addRoom();document.getElementById('add').onclick=addRoom;document.getElementById('date').value=new Date().toISOString().slice(0,10);
 document.getElementById('calc').onclick=()=>{
- const roll=Number(document.getElementById('roll').value),price=Number(document.getElementById('price').value)||0;
+ const price=Number(document.getElementById('price').value)||0;
  const raw=[...list.querySelectorAll('.room')].map((r,i)=>({name:r.querySelector('.name').value.trim()||'Room '+(i+1),w:Number(r.querySelector('.w').value),l:Number(r.querySelector('.l').value),index:i})).filter(r=>r.w>0&&r.l>0);
  if(!raw.length){alert('Enter at least one room with valid measurements.');return}
- const invalid=raw.filter(r=>Math.min(r.w,r.l)>roll+0.00001);
- const valid=raw.filter(r=>Math.min(r.w,r.l)<=roll+0.00001);
- // Search room orientations and shelf combinations for the shortest roll length.
- // For larger jobs, use a bounded greedy fallback to keep the planner responsive.
- const sorted=[...valid].sort((a,b)=>(b.w*b.l-a.w*a.l));
- let shelves=[];
- if(sorted.length<=10){
-   let bestLength=Infinity,bestShelves=null;
-   function searchPacking(pos,current){
-     const usedLength=current.reduce((sum,sh)=>sum+sh.height,0);
-     if(usedLength>=bestLength-0.000001)return;
-     if(pos===sorted.length){
-       bestLength=usedLength;
-       bestShelves=current.map(sh=>({height:sh.height,used:sh.used,items:sh.items.map(x=>({...x}))}));
-       return;
-     }
-     const room=sorted[pos];
-     const opts=[{across:room.w,run:room.l,rotated:false},{across:room.l,run:room.w,rotated:true}].filter(o=>o.across<=roll+0.00001);
-     const seen=new Set();
-     for(let si=0;si<current.length;si++){
-       const sh=current[si],signature=sh.used.toFixed(4)+"/"+sh.height.toFixed(4);
-       if(seen.has(signature))continue;seen.add(signature);
-       for(const o of opts){
-         if(o.across<=roll-sh.used+0.00001){
-           const next=current.map(x=>({height:x.height,used:x.used,items:[...x.items]}));
-           next[si].height=Math.max(next[si].height,o.run);
-           next[si].used+=o.across;
-           next[si].items.push({...room,...o});
-           searchPacking(pos+1,next);
+ function makePlan(roll){
+   const valid=raw.filter(r=>Math.min(r.w,r.l)<=roll+0.00001);
+   const sorted=[...valid].sort((a,b)=>(b.w*b.l-a.w*a.l));
+   let shelves=[];
+   if(sorted.length<=10){
+     let bestLength=Infinity,bestShelves=null;
+     function searchPacking(pos,current){
+       const usedLength=current.reduce((sum,sh)=>sum+sh.height,0);
+       if(usedLength>=bestLength-0.000001)return;
+       if(pos===sorted.length){
+         bestLength=usedLength;
+         bestShelves=current.map(sh=>({height:sh.height,used:sh.used,items:sh.items.map(x=>({...x}))}));
+         return;
+       }
+       const room=sorted[pos];
+       const opts=[{across:room.w,run:room.l,rotated:false},{across:room.l,run:room.w,rotated:true}].filter(o=>o.across<=roll+0.00001);
+       const seen=new Set();
+       for(let si=0;si<current.length;si++){
+         const sh=current[si],signature=sh.used.toFixed(4)+"/"+sh.height.toFixed(4);
+         if(seen.has(signature))continue;seen.add(signature);
+         for(const o of opts){
+           if(o.across<=roll-sh.used+0.00001){
+             const next=current.map(x=>({height:x.height,used:x.used,items:[...x.items]}));
+             next[si].height=Math.max(next[si].height,o.run);next[si].used+=o.across;
+             next[si].items.push({...room,...o});searchPacking(pos+1,next);
+           }
          }
        }
+       for(const o of opts){
+         const next=current.map(x=>({height:x.height,used:x.used,items:[...x.items]}));
+         next.push({height:o.run,used:o.across,items:[{...room,...o}]});searchPacking(pos+1,next);
+       }
      }
-     for(const o of opts){
-       const next=current.map(x=>({height:x.height,used:x.used,items:[...x.items]}));
-       next.push({height:o.run,used:o.across,items:[{...room,...o}]});
-       searchPacking(pos+1,next);
+     searchPacking(0,[]);shelves=bestShelves||[];
+   }else{
+     for(const room of sorted){
+       const opts=[{across:room.w,run:room.l,rotated:false},{across:room.l,run:room.w,rotated:true}].filter(o=>o.across<=roll+0.00001);
+       let best=null;
+       for(let si=0;si<shelves.length;si++)for(const o of opts){
+         const sh=shelves[si];if(o.across<=roll-sh.used+0.00001){
+           const score=Math.max(0,o.run-sh.height)*100000+(roll-sh.used-o.across);
+           if(!best||score<best.score)best={si,o,score};
+         }
+       }
+       if(best){const sh=shelves[best.si];sh.height=Math.max(sh.height,best.o.run);sh.used+=best.o.across;sh.items.push({...room,...best.o});}
+       else if(opts.length){opts.sort((a,b)=>a.run-b.run);const o=opts[0];shelves.push({height:o.run,used:o.across,items:[{...room,...o}]});}
      }
    }
-   searchPacking(0,[]);
-   shelves=bestShelves||[];
- }else{
-   for(const room of sorted){
-     const opts=[{across:room.w,run:room.l,rotated:false},{across:room.l,run:room.w,rotated:true}].filter(o=>o.across<=roll+0.00001);
-     let best=null;
-     for(let si=0;si<shelves.length;si++)for(const o of opts){const sh=shelves[si];if(o.across<=roll-sh.used+0.00001){const score=Math.max(0,o.run-sh.height)*100000+(roll-sh.used-o.across);if(!best||score<best.score)best={si,o,score};}}
-     if(best){const sh=shelves[best.si];sh.height=Math.max(sh.height,best.o.run);sh.used+=best.o.across;sh.items.push({...room,...best.o});}
-     else{opts.sort((a,b)=>a.run-b.run);const o=opts[0];shelves.push({height:o.run,used:o.across,items:[{...room,...o}]});}
-   }
+   const placed=shelves.flatMap(s=>s.items);
+   const total=shelves.reduce((sum,sh)=>sum+sh.height,0);
+   const supplied=total*roll;
+   const area=placed.reduce((sum,r)=>sum+r.w*r.l,0);
+   return {roll,valid,placed,shelves,total,supplied,area,waste:Math.max(0,supplied-area)};
  }
- const total=shelves.reduce((s,sh)=>s+sh.height,0),area=valid.reduce((s,r)=>s+r.w*r.l,0),waste=Math.max(0,roll*total-area);
- const placed=shelves.flatMap(s=>s.items),placedByIndex=new Map(placed.map(r=>[r.index,r]));
- const rows=raw.map(r=>{const p=placedByIndex.get(r.index);return p?{...p,ok:true}: {...r,ok:false}});
+ const plans=[makePlan(4),makePlan(5)];
+ plans.sort((a,b)=>b.placed.length-a.placed.length||a.supplied-b.supplied||a.roll-b.roll);
+ const plan=plans[0],roll=plan.roll,shelves=plan.shelves,placed=plan.placed,total=plan.total;
+ const placedByIndex=new Map(placed.map(r=>[r.index,r]));
+ const rows=raw.map(r=>{const p=placedByIndex.get(r.index);return p?{...p,ok:true}:{...r,ok:false}});
+ const invalid=rows.filter(r=>!r.ok);
  document.getElementById('result').hidden=false;
  document.getElementById('metres').textContent=total.toFixed(2)+' m';
- document.getElementById('supplied').textContent=(total*roll).toFixed(2)+' m²';
- document.getElementById('roomarea').textContent=area.toFixed(2)+' m²';
- document.getElementById('cost').textContent='£'+(total*roll*price).toFixed(2);
+ document.getElementById('supplied').textContent=plan.supplied.toFixed(2)+' m²';
+ document.getElementById('roomarea').textContent=plan.area.toFixed(2)+' m²';
+ document.getElementById('cost').textContent='£'+(plan.supplied*price).toFixed(2);
  document.getElementById('count').textContent=placed.length+' / '+raw.length;
- document.getElementById('waste').textContent=waste.toFixed(2)+' m²';
+ document.getElementById('waste').textContent=plan.waste.toFixed(2)+' m²';
  const job=esc(document.getElementById('customer').value||'CWF job'),date=esc(document.getElementById('date').value||'');
- document.getElementById('cuts').innerHTML='<p><b>'+job+'</b> · '+date+' · '+roll+'m roll</p>'+rows.map((r,i)=>'<div class="line"><b>'+(i+1)+'. '+esc(r.name)+'</b><br>'+(r.ok?r.across.toFixed(2)+'m across × '+r.run.toFixed(2)+'m long'+(r.rotated?' (turned)':'')+' · Cut section '+(shelves.findIndex(s=>s.items.some(x=>x.index===r.index))+1):'<span style="color:#a33">Does not fit the selected roll width</span>')+'</div>').join('')+'<p><b>Total roll length: '+total.toFixed(2)+' linear metres</b></p>';
+ document.getElementById('cuts').innerHTML='<p><b>'+job+'</b> · '+date+' · Recommended '+roll+'m roll</p>'+rows.map((r,i)=>'<div class="line"><b>'+(i+1)+'. '+esc(r.name)+'</b><br>'+(r.ok?r.across.toFixed(2)+'m across × '+r.run.toFixed(2)+'m long'+(r.rotated?' (turned)':'')+' · Cut section '+(shelves.findIndex(s=>s.items.some(x=>x.index===r.index))+1):'<span style="color:#a33">Does not fit either roll width</span>')+'</div>').join('')+'<p><b>Total roll length: '+total.toFixed(2)+' linear metres on a '+roll+'m roll</b></p>';
  document.getElementById('layout').innerHTML=shelves.map((sh,i)=>'<div class="shelf"><b>Cut section '+(i+1)+' · '+sh.height.toFixed(2)+'m long</b><div>'+sh.items.map(p=>'<span class="piece">'+esc(p.name)+'<br>'+p.across.toFixed(2)+'m × '+p.run.toFixed(2)+'m</span>').join('')+'</div><div class="offcut">Unused width in this section: '+Math.max(0,roll-sh.used).toFixed(2)+'m across the full section length</div></div>').join('');
- document.getElementById('warning');
- if(invalid.length)document.querySelector('.notice').textContent='These rooms are too wide for the selected roll in either direction: '+invalid.map(r=>r.name).join(', ')+'. '+ 'This is a first-fit cutting estimate, not a guaranteed nesting solution. Check pile direction, pattern repeats, matching, doorway turns and fitting allowances before ordering or cutting.';
- else document.querySelector('.notice').textContent='This is a first-fit cutting estimate, not a guaranteed nesting solution. Check pile direction, pattern repeats, matching, doorway turns and fitting allowances before ordering or cutting.';
-};
+ const notice=document.querySelector('.notice');
+ notice.textContent=invalid.length?'These rooms do not fit either the 4m or 5m roll in either direction: '+invalid.map(r=>r.name).join(', ')+'. Check measurements or consider a different solution.':'Automatic comparison selected the option that fits the most rooms, then uses the least total carpet area. Check pile direction, pattern repeats, matching, doorway turns and fitting allowances before ordering or cutting.';
+}
 function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 </script>
 </body></html>
