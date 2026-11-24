@@ -5,7 +5,7 @@
 <title>CWF Cutting Planner</title>
 <style>
 *{box-sizing:border-box}body{margin:0;background:#f4f4f2;color:#222;font:16px Arial,sans-serif}.head{background:#171717;color:white;padding:24px}.head small{color:#d7b56d;letter-spacing:2px;font-weight:bold}.head h1{margin:8px 0}.wrap{max-width:900px;margin:auto;padding:16px}.card{background:white;border:1px solid #ddd;border-radius:12px;padding:16px;margin:14px 0}h2{font-size:18px;margin:0 0 14px}.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}label{display:block;font-size:12px;font-weight:bold;color:#555;margin-bottom:5px}input,select{width:100%;padding:12px;border:1px solid #bbb;border-radius:8px;font-size:16px}.room{display:grid;grid-template-columns:1.4fr 1fr 1fr 40px;gap:8px;margin:12px 0;align-items:end}button{padding:12px 16px;border:0;border-radius:8px;font-weight:bold;font-size:15px;background:#171717;color:white;margin:4px 4px 4px 0}.gold{background:#d7b56d;color:#171717}.remove{background:#eee;color:#222}.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.stat{background:#f4f1e9;padding:12px;border-radius:8px}.stat b{display:block;font-size:20px;margin-top:5px}.line{padding:10px 0;border-bottom:1px solid #eee}.muted{font-size:12px;color:#666}.shelf{border:1px solid #c9b783;border-radius:8px;margin:12px 0;padding:10px;background:#faf8f2}.piece{display:inline-block;background:#e8d7a9;border:1px solid #987d42;border-radius:5px;padding:8px;margin:3px;font-size:12px}.offcut{color:#666;font-size:12px;margin-top:6px}.notice{background:#fff8e8;border-left:4px solid #d7b56d;padding:10px;font-size:13px}@media(max-width:600px){.grid{grid-template-columns:1fr}.room{grid-template-columns:1fr 1fr 1fr 36px}.stats{grid-template-columns:1fr 1fr}}@media print{.head{background:white;color:black;border-bottom:2px solid}.no-print{display:none!important}.wrap{padding:0}.card{break-inside:avoid}}
-</style>
+nav{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0}nav button{flex:1;min-width:100px}.page[hidden]{display:none!important}</style>
 </head>
 <body>
 <header class="head"><div class="wrap"><small>CHRIS WALLACE FLOORING</small><h1>CWF Cutting Planner</h1><div>Carpet room measurements and roll calculations</div></div></header>
@@ -22,6 +22,8 @@
 <div><label>Fitting charge (automatically included)</label><div style="padding:12px;border:1px solid #ddd;border-radius:8px;background:#f4f1e9">£5 per room m² · £60 minimum per room (12m²)</div></div>
 <div><label>Stairs and landing</label><label style="display:flex;align-items:center;gap:8px;font-size:15px"><input id="stairsEnabled" type="checkbox" style="width:auto"> Add £60 stairs and landing surcharge</label></div>
 </div></section>
+<nav class="no-print" id="pageNav"><button type="button" onclick="showPage('carpet')">Carpet</button><button type="button" onclick="showPage('vinyl')">Vinyl</button><button type="button" onclick="showPage('laminate')">Laminate</button><button type="button" onclick="showPage('lvt')">LVT</button><button type="button" onclick="showPage('prep')">Screed / DPM / Glue</button><button type="button" onclick="showPage('quote')">Final total</button></nav>
+<div id="page-carpet" class="page">
 <section class="card"><h2>Room measurements</h2><p class="muted">Enter the finished room width and length in metres. The planner tries both directions and groups rooms together where they fit across the roll.</p><div id="rooms"></div><div class="no-print"><button class="gold" id="add">+ Add room</button><button id="calc">Calculate cutting plan</button></div></section>
 <section class="card" id="result" hidden><h2>Cutting plan</h2>
 <div class="stats"><div class="stat"><span class="muted">Linear metres</span><b id="metres">—</b></div><div class="stat"><span class="muted">Carpet supplied (m²)</span><b id="supplied">—</b></div><div class="stat"><span class="muted">Room area (m²)</span><b id="roomarea">—</b></div><div class="stat"><span class="muted">Estimated waste (m²)</span><b id="waste">—</b></div><div class="stat"><span class="muted">Carpet cost</span><b id="cost">—</b></div><div class="stat"><span class="muted">Underlay cost</span><b id="underlayCost">—</b></div><div class="stat"><span class="muted">Doorplates</span><b id="plateCost">—</b></div><div class="stat"><span class="muted">Total job materials</span><b id="grandTotal">—</b></div><div class="stat"><span class="muted">Fitting charge</span><b id="fittingCost">—</b></div><div class="stat"><span class="muted">Total including fitting</span><b id="jobTotal">—</b></div><div class="stat"><span class="muted">Rooms fitting</span><b id="count">—</b></div></div>
@@ -29,6 +31,44 @@
 <p class="notice">This is a first-fit cutting estimate, not a guaranteed nesting solution. Check pile direction, pattern repeats, matching, doorway turns and fitting allowances before ordering or cutting.</p>
 <div class="no-print"><button onclick="window.print()">Print fitter's sheet</button></div>
 </section>
+
+</div>
+<div id="page-vinyl" class="page" hidden>
+<section class="card"><h2>Vinyl calculator</h2><p class="muted">Enter the total vinyl area. The calculator compares 2m, 3m and 4m roll widths and selects the width needing the fewest linear metres.</p>
+<div class="grid">
+<div><label>Vinyl area (m²)</label><input id="vinylArea" type="number" min="0" step=".01" placeholder="0.00"></div>
+<div><label>Vinyl price per m² (£)</label><input id="vinylPrice" type="number" min="0" step=".01" placeholder="0.00"></div>
+</div><button onclick="calcVinyl()">Calculate vinyl</button><div id="vinylResult" class="line"></div></section>
+</div>
+<div id="page-laminate" class="page" hidden>
+<section class="card"><h2>Laminate calculator</h2><div class="grid">
+<div><label>Floor area (m²)</label><input id="lamArea" type="number" min="0" step=".01" placeholder="0.00"></div>
+<div><label>Laminate pack coverage (m²)</label><input id="lamPackArea" type="number" min=".01" step=".01" placeholder="e.g. 2.2"></div>
+<div><label>Laminate price per pack (£)</label><input id="lamPackPrice" type="number" min="0" step=".01" placeholder="0.00"></div>
+<div><label>Underlay pack coverage (m²)</label><input id="lamUnderlayCoverage" type="number" min=".01" step=".01" placeholder="e.g. 10"></div>
+<div><label>Underlay price per pack (£)</label><input id="lamUnderlayPrice" type="number" min="0" step=".01" placeholder="0.00"></div>
+<div><label>Room perimeter total (linear metres)</label><input id="lamPerimeter" type="number" min="0" step=".01" placeholder="0.00"></div>
+<div><label>Beading price per 2.4m length (£)</label><input id="lamBeadPrice" type="number" min="0" step=".01" placeholder="0.00"></div>
+</div><p class="muted">Beading lengths are calculated from the total room perimeter ÷ 2.4m, rounded up to whole lengths.</p><button onclick="calcLaminate()">Calculate laminate</button><div id="lamResult" class="line"></div></section>
+</div>
+<div id="page-lvt" class="page" hidden>
+<section class="card"><h2>LVT calculator</h2><div class="grid">
+<div><label>LVT floor area (m²)</label><input id="lvtArea" type="number" min="0" step=".01" placeholder="0.00"></div>
+<div><label>LVT pack coverage (m²)</label><input id="lvtPackArea" type="number" min=".01" step=".01" placeholder="e.g. 3.0"></div>
+<div><label>LVT price per pack (£)</label><input id="lvtPackPrice" type="number" min="0" step=".01" placeholder="0.00"></div>
+<div><label>LVT fitting price per m² (£)</label><input id="lvtFitRate" type="number" min="0" step=".01" placeholder="Enter your rate"></div>
+</div><button onclick="calcLvt()">Calculate LVT</button><div id="lvtResult" class="line"></div></section>
+</div>
+<div id="page-prep" class="page" hidden>
+<section class="card"><h2>Screed, DPM and glue</h2><div class="grid">
+<div><label>Screed area (m²)</label><input id="screedArea" type="number" min="0" step=".01" placeholder="0.00"></div>
+<div><label>DPM units (£200 each)</label><input id="dpmUnits" type="number" min="0" step="1" value="0"></div>
+<div><label>Glue area (m²) (£2/m²)</label><input id="glueArea" type="number" min="0" step=".01" placeholder="0.00"></div>
+</div><p class="muted">Screed is £17.50/m² with an £80 minimum charge. DPM is £200 per unit. Glue is £2/m².</p><button onclick="calcPrep()">Calculate preparation</button><div id="prepResult" class="line"></div></section>
+</div>
+<div id="page-quote" class="page" hidden>
+<section class="card"><h2>Full job quotation</h2><p class="muted">Each calculator adds its total here. You can use more than one flooring type on the same job.</p><div id="quoteBreakdown"></div><h2 id="fullTotal">Full job total: £0.00</h2><button onclick="window.print()">Print full quotation</button></section>
+</div>
 <p class="muted" style="text-align:center">CWF Cutting Planner · Check all measurements before cutting.</p>
 </main>
 <script>
@@ -125,6 +165,7 @@ document.getElementById('calc').onclick=()=>{
  const roomFitting=raw.map(r=>({name:r.name,area:r.w*r.l,charge:Math.max(60,r.w*r.l*5)}));
  const fittingCost=roomFitting.reduce((sum,r)=>sum+r.charge,0)+(stairsEnabled?60:0);
  const jobTotal=grandTotal+fittingCost;
+ quoteTotals.carpet=jobTotal;
  document.getElementById('cost').textContent='£'+carpetCost.toFixed(2);
  document.getElementById('underlayCost').textContent='£'+underlayCost.toFixed(2);
  document.getElementById('plateCost').textContent='£'+plateCost.toFixed(2);
@@ -147,6 +188,18 @@ document.getElementById('calc').onclick=()=>{
  const notice=document.querySelector('.notice');
  notice.textContent=invalid.length?'These rooms do not fit either the 4m or 5m roll in either direction: '+invalid.map(r=>r.name).join(', ')+'. Check measurements or consider a different solution.':'Automatic comparison selected the option that fits the most rooms, then uses the least total carpet area. Check pile direction, pattern repeats, matching, doorway turns and fitting allowances before ordering or cutting.';
 }
+
+const quoteTotals={carpet:0,vinyl:0,laminate:0,lvt:0,prep:0};
+const quoteLabels={carpet:'Carpet',vinyl:'Vinyl',laminate:'Laminate',lvt:'LVT',prep:'Screed / DPM / Glue'};
+function showPage(name){document.querySelectorAll('.page').forEach(p=>p.hidden=true);document.getElementById('page-'+name).hidden=false;document.getElementById('pageNav').querySelectorAll('button').forEach(b=>b.style.background=b.textContent.toLowerCase().includes(name==='prep'?'screed':name)?'#d7b56d':'#171717');if(name==='quote')renderQuote();window.scrollTo(0,0)}
+function val(id){return Math.max(0,Number(document.getElementById(id).value)||0)}
+function money(n){return '£'+n.toFixed(2)}
+function saveQuote(key,total,detail){quoteTotals[key]=total;document.getElementById(key==='vinyl'?'vinylResult':key==='laminate'?'lamResult':key==='lvt'?'lvtResult':'prepResult').innerHTML=detail+'<br><b>Section total: '+money(total)+'</b>';renderQuote()}
+function renderQuote(){const entries=Object.keys(quoteTotals).filter(k=>quoteTotals[k]>0);const total=Object.values(quoteTotals).reduce((a,b)=>a+b,0);document.getElementById('quoteBreakdown').innerHTML=entries.length?entries.map(k=>'<div class="line">'+quoteLabels[k]+': <b>'+money(quoteTotals[k])+'</b></div>').join(''):'No sections calculated yet.';document.getElementById('fullTotal').textContent='Full job total: '+money(total)}
+function calcVinyl(){const area=val('vinylArea'),price=val('vinylPrice');if(!area){alert('Enter the vinyl area.');return}const choices=[2,3,4].map(w=>({w,metres:area/w})).sort((a,b)=>a.metres-b.metres);const best=choices[0],material=area*price,fit=Math.max(60,area*5),total=material+fit;saveQuote('vinyl',total,'Area '+area.toFixed(2)+'m² · selected '+best.w+'m roll · estimated '+best.metres.toFixed(2)+' linear metres<br>Vinyl: '+money(material)+' · Fitting: '+money(fit)+' (£5/m², £60 minimum)')}
+function calcLaminate(){const area=val('lamArea'),pack=val('lamPackArea'),packPrice=val('lamPackPrice'),uc=val('lamUnderlayCoverage'),up=val('lamUnderlayPrice'),per=val('lamPerimeter'),bp=val('lamBeadPrice');if(!area||!pack){alert('Enter floor area and laminate pack coverage.');return}const packs=Math.ceil(area/pack),mat=packs*packPrice,underPacks=uc?Math.ceil(area/uc):0,under=underPacks*up,beads=Math.ceil(per/2.4),beadCost=beads*bp,fit=Math.max(8,area)*15,total=mat+under+beadCost+fit;saveQuote('laminate',total,'Laminate: '+packs+' packs = '+money(mat)+' · Underlay: '+underPacks+' packs = '+money(under)+' · Beading: '+beads+' lengths × 2.4m = '+money(beadCost)+' · Fitting: '+money(fit)+' (£15/m², 8m² minimum)')}
+function calcLvt(){const area=val('lvtArea'),pack=val('lvtPackArea'),price=val('lvtPackPrice'),rate=val('lvtFitRate');if(!area||!pack){alert('Enter LVT area and pack coverage.');return}const packs=Math.ceil(area/pack),mat=packs*price,fit=area*rate,total=mat+fit;saveQuote('lvt',total,'LVT: '+packs+' packs = '+money(mat)+' · Fitting: '+area.toFixed(2)+'m² × '+money(rate)+' = '+money(fit))}
+function calcPrep(){const area=val('screedArea'),units=Math.floor(val('dpmUnits')),glueArea=val('glueArea'),screed=area?Math.max(80,area*17.5):0,dpm=units*200,glue=glueArea*2,total=screed+dpm+glue;saveQuote('prep',total,'Screed: '+money(screed)+' · DPM: '+units+' units = '+money(dpm)+' · Glue: '+glueArea.toFixed(2)+'m² = '+money(glue))}
 function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 </script>
 </body></html>
