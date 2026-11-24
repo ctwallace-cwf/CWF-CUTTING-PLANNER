@@ -29,7 +29,7 @@ nav{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0}nav button{flex:1;min-widt
 <div class="stats"><div class="stat"><span class="muted">Linear metres</span><b id="metres">—</b></div><div class="stat"><span class="muted">Carpet supplied (m²)</span><b id="supplied">—</b></div><div class="stat"><span class="muted">Room area (m²)</span><b id="roomarea">—</b></div><div class="stat"><span class="muted">Estimated waste (m²)</span><b id="waste">—</b></div><div class="stat"><span class="muted">Carpet cost</span><b id="cost">—</b></div><div class="stat"><span class="muted">Underlay cost</span><b id="underlayCost">—</b></div><div class="stat"><span class="muted">Doorplates</span><b id="plateCost">—</b></div><div class="stat"><span class="muted">Total job materials</span><b id="grandTotal">—</b></div><div class="stat"><span class="muted">Fitting charge</span><b id="fittingCost">—</b></div><div class="stat"><span class="muted">Total including fitting</span><b id="jobTotal">—</b></div><div class="stat"><span class="muted">Rooms fitting</span><b id="count">—</b></div></div>
 <div id="cuts"></div><h3>Roll layout</h3><div id="layout"></div>
 <p class="notice">This is a first-fit cutting estimate, not a guaranteed nesting solution. Check pile direction, pattern repeats, matching, doorway turns and fitting allowances before ordering or cutting.</p>
-<div class="no-print"><button onclick="window.print()">Print fitter's sheet</button></div>
+<div class="no-print"><button type="button" class="gold" onclick="saveSectionPdf('result','CWF Carpet Quotation')">Save carpet sheet as PDF</button><button onclick="window.print()">Print fitter's sheet</button></div>
 </section>
 
 </div>
@@ -63,10 +63,11 @@ nav{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0}nav button{flex:1;min-widt
 </div><p class="muted">Screed is £17.50/m² with an £80 minimum charge. DPM is £200 per unit. Glue is £2/m².</p><button onclick="calcPrep()">Calculate preparation</button><div id="prepResult" class="line"></div></section>
 </div>
 <div id="page-quote" class="page" hidden>
-<section class="card"><h2>Full job quotation</h2><p class="muted">Each calculator adds its total here. You can use more than one flooring type on the same job.</p><div id="quoteBreakdown"></div><h2 id="fullTotal">Full job total: £0.00</h2><button onclick="window.print()">Print full quotation</button></section>
+<section class="card"><h2>Full job quotation</h2><p class="muted">Each calculator adds its total here. You can use more than one flooring type on the same job.</p><div id="quoteBreakdown"></div><h2 id="fullTotal">Full job total: £0.00</h2><button type="button" class="gold" onclick="saveSectionPdf('page-quote','CWF Full Quotation')">Save full quotation as PDF</button><button onclick="window.print()">Print full quotation</button></section>
 </div>
 <p class="muted" style="text-align:center">CWF Cutting Planner · Check all measurements before cutting.</p>
 </main>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.2/jspdf.umd.min.js"></script>
 <script>
 const list=document.getElementById('rooms');
 let roomFieldCounter=0;
@@ -253,6 +254,19 @@ function calcVinyl(){
 function calcLaminate(){const measured=measureRooms('lamRooms'),area=measured.area,per=measured.perimeter,pack=val('lamPackArea'),packPrice=val('lamPackPrice'),uc=val('lamUnderlayCoverage'),up=val('lamUnderlayPrice'),bp=val('lamBeadPrice');if(!area||!pack){alert('Enter floor area and laminate pack coverage.');return}const packs=Math.ceil(area/pack),mat=packs*packPrice,underPacks=uc?Math.ceil(area/uc):0,under=underPacks*up,beads=Math.ceil(per/2.4),beadCost=beads*bp,fit=Math.max(8,area)*15,total=mat+under+beadCost+fit;saveQuote('laminate',total,'Laminate: '+packs+' packs = '+money(mat)+' · Underlay: '+underPacks+' packs = '+money(under)+' · Beading: '+beads+' lengths × 2.4m = '+money(beadCost)+' · Fitting: '+money(fit)+' (£15/m², 8m² minimum)')}
 function calcLvt(){const area=measureRooms('lvtRooms').area,pack=val('lvtPackArea'),price=val('lvtPackPrice'),rate=val('lvtFitRate');if(!area||!pack){alert('Enter LVT area and pack coverage.');return}const packs=Math.ceil(area/pack),mat=packs*price,fit=area*rate,total=mat+fit;saveQuote('lvt',total,'LVT: '+packs+' packs = '+money(mat)+' · Fitting: '+area.toFixed(2)+'m² × '+money(rate)+' = '+money(fit))}
 function calcPrep(){const area=measureRooms('prepRooms').area,units=Math.floor(val('dpmUnits')),glueArea=area,screed=area?Math.max(80,area*17.5):0,dpm=units*200,glue=glueArea*2,total=screed+dpm+glue;saveQuote('prep',total,'Screed: '+money(screed)+' · DPM: '+units+' units = '+money(dpm)+' · Glue: '+glueArea.toFixed(2)+'m² = '+money(glue))}
+function saveSectionPdf(sectionId,title){
+ if(!window.jspdf||!window.jspdf.jsPDF){alert('PDF tool is still loading. Please try again in a moment.');return}
+ const section=document.getElementById(sectionId);
+ if(!section){alert('Nothing to save yet. Calculate the quotation first.');return}
+ const jsPDF=window.jspdf.jsPDF,doc=new jsPDF({unit:'mm',format:'a4'});
+ const margin=15,pageWidth=180,lineHeight=6;let y=20;
+ doc.setFont('helvetica','bold');doc.setFontSize(18);doc.text('CHRIS WALLACE FLOORING',margin,y);y+=9;
+ doc.setFontSize(14);doc.text(title,margin,y);y+=9;doc.setFont('helvetica','normal');doc.setFontSize(10);
+ section.innerText.split(/\\n+/).map(x=>x.trim()).filter(Boolean).forEach(line=>{
+  doc.splitTextToSize(line,pageWidth).forEach(part=>{if(y>280){doc.addPage();y=20}doc.text(part,margin,y);y+=lineHeight});
+ });
+ const date=new Date().toISOString().slice(0,10);doc.save('CWF-'+title.toLowerCase().replace(/[^a-z0-9]+/g,'-')+'-'+date+'.pdf');
+}
 function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 </script>
 </body></html>
