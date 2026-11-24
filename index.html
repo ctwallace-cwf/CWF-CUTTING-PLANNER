@@ -39,7 +39,7 @@ nav{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0}nav button{flex:1;min-widt
 <div class="grid">
 <div><label>Roll width</label><div style="padding:12px;border:1px solid #ddd;border-radius:8px;background:#f4f1e9">Automatic selection: 2m, 3m or 4m</div></div>
 <div><label>Vinyl price per m² (£)</label><input id="vinylPrice" type="number" min="0" step=".01" placeholder="0.00"></div>
-</div><button onclick="calcVinyl()">Calculate vinyl</button><div id="vinylResult" class="line"></div></section>
+</div><button onclick="calcVinyl()">Calculate vinyl</button><div id="vinylResult" class="line"></div><button type="button" class="gold" onclick="saveSectionPdf('vinylResult','CWF Vinyl Quotation')">Save vinyl quotation as PDF</button></section>
 </div>
 <div id="page-laminate" class="page" hidden>
 <section class="card"><h2>Laminate calculator</h2><h3>Laminate room measurements</h3><p class="muted">Add each room; floor area and total perimeter are calculated automatically.</p><div id="lamRooms"></div><button type="button" class="gold" onclick="addMeasureRoom('lamRooms')">+ Add room</button><div class="grid">
@@ -48,19 +48,19 @@ nav{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0}nav button{flex:1;min-widt
 <div><label>Underlay pack coverage (m²)</label><input id="lamUnderlayCoverage" type="number" min=".01" step=".01" placeholder="e.g. 10"></div>
 <div><label>Underlay price per pack (£)</label><input id="lamUnderlayPrice" type="number" min="0" step=".01" placeholder="0.00"></div>
 <div><label>Beading price per 2.4m length (£)</label><input id="lamBeadPrice" type="number" min="0" step=".01" placeholder="0.00"></div>
-</div><p class="muted">Beading lengths are calculated from the total room perimeter ÷ 2.4m, rounded up to whole lengths.</p><button onclick="calcLaminate()">Calculate laminate</button><div id="lamResult" class="line"></div></section>
+</div><p class="muted">Beading lengths are calculated from the total room perimeter ÷ 2.4m, rounded up to whole lengths.</p><button onclick="calcLaminate()">Calculate laminate</button><div id="lamResult" class="line"></div><button type="button" class="gold" onclick="saveSectionPdf('lamResult','CWF Laminate Quotation')">Save laminate quotation as PDF</button></section>
 </div>
 <div id="page-lvt" class="page" hidden>
 <section class="card"><h2>LVT calculator</h2><h3>LVT room measurements</h3><p class="muted">Add each room to calculate the total m² automatically.</p><div id="lvtRooms"></div><button type="button" class="gold" onclick="addMeasureRoom('lvtRooms')">+ Add room</button><div class="grid">
 <div><label>LVT pack coverage (m²)</label><input id="lvtPackArea" type="number" min=".01" step=".01" placeholder="e.g. 3.0"></div>
 <div><label>LVT price per pack (£)</label><input id="lvtPackPrice" type="number" min="0" step=".01" placeholder="0.00"></div>
 <div><label>LVT fitting price per m² (£)</label><input id="lvtFitRate" type="number" min="0" step=".01" placeholder="Enter your rate"></div>
-</div><button onclick="calcLvt()">Calculate LVT</button><div id="lvtResult" class="line"></div></section>
+</div><button onclick="calcLvt()">Calculate LVT</button><div id="lvtResult" class="line"></div><button type="button" class="gold" onclick="saveSectionPdf('lvtResult','CWF LVT Quotation')">Save LVT quotation as PDF</button></section>
 </div>
 <div id="page-prep" class="page" hidden>
 <section class="card"><h2>Screed, DPM and glue</h2><h3>Preparation room measurements</h3><p class="muted">Add rooms to calculate screed and glue area automatically.</p><div id="prepRooms"></div><button type="button" class="gold" onclick="addMeasureRoom('prepRooms')">+ Add room</button><div class="grid">
 <div><label>DPM units (£200 each)</label><input id="dpmUnits" type="number" min="0" step="1" value="0"></div>
-</div><p class="muted">Screed is £17.50/m² with an £80 minimum charge. DPM is £200 per unit. Glue is £2/m².</p><button onclick="calcPrep()">Calculate preparation</button><div id="prepResult" class="line"></div></section>
+</div><p class="muted">Screed is £17.50/m² with an £80 minimum charge. DPM is £200 per unit. Glue is £2/m².</p><button onclick="calcPrep()">Calculate preparation</button><div id="prepResult" class="line"></div><button type="button" class="gold" onclick="saveSectionPdf('prepResult','CWF Preparation Quotation')">Save preparation quotation as PDF</button></section>
 </div>
 <div id="page-quote" class="page" hidden>
 <section class="card"><h2>Full job quotation</h2><p class="muted">Each calculator adds its total here. You can use more than one flooring type on the same job.</p><div id="quoteBreakdown"></div><h2 id="fullTotal">Full job total: £0.00</h2><button type="button" class="gold" onclick="saveSectionPdf('page-quote','CWF Full Quotation')">Save full quotation as PDF</button><button onclick="window.print()">Print full quotation</button></section>
