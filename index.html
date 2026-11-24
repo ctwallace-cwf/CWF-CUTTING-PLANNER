@@ -203,7 +203,53 @@ function val(id){return Math.max(0,Number(document.getElementById(id).value)||0)
 function money(n){return '£'+n.toFixed(2)}
 function saveQuote(key,total,detail){quoteTotals[key]=total;document.getElementById(key==='vinyl'?'vinylResult':key==='laminate'?'lamResult':key==='lvt'?'lvtResult':'prepResult').innerHTML=detail+'<br><b>Section total: '+money(total)+'</b>';renderQuote()}
 function renderQuote(){const entries=Object.keys(quoteTotals).filter(k=>quoteTotals[k]>0);const total=Object.values(quoteTotals).reduce((a,b)=>a+b,0);document.getElementById('quoteBreakdown').innerHTML=entries.length?entries.map(k=>'<div class="line">'+quoteLabels[k]+': <b>'+money(quoteTotals[k])+'</b></div>').join(''):'No sections calculated yet.';document.getElementById('fullTotal').textContent='Full job total: '+money(total)}
-function calcVinyl(){const measured=measureRooms('vinylRooms'),area=measured.area,price=val('vinylPrice'),width=val('vinylWidth');if(!area){alert('Enter the vinyl area.');return}const metres=area/width,material=area*price,fit=Math.max(60,area*5),total=material+fit;saveQuote('vinyl',total,'Area '+area.toFixed(2)+'m² · chosen '+width+'m roll width · estimated '+metres.toFixed(2)+' linear metres<br>Vinyl: '+money(material)+' · Fitting: '+money(fit)+' (£5/m², £60 minimum)')}
+function calcVinyl(){
+ const measured=measureRooms('vinylRooms'),rooms=measured.rooms,area=measured.area,price=val('vinylPrice');
+ if(!area){alert('Enter at least one room with valid width and length.');return}
+ function makePlan(roll){
+  const sorted=[...rooms].sort((a,b)=>(b.w*b.l-a.w*a.l));
+  const options=r=>[{across:r.w,run:r.l,rotated:false},{across:r.l,run:r.w,rotated:true}].filter(o=>o.across<=roll+0.00001);
+  let shelves=[];
+  if(sorted.length<=10){
+   let bestLength=Infinity,best=null;
+   function search(pos,current){
+    const used=current.reduce((s,x)=>s+x.height,0);
+    if(used>=bestLength-0.000001)return;
+    if(pos===sorted.length){bestLength=used;best=current.map(sh=>({height:sh.height,used:sh.used,items:sh.items.map(x=>({...x}))}));return}
+    const room=sorted[pos];
+    for(let i=0;i<current.length;i++)for(const o of options(room)){
+     const sh=current[i];if(o.across<=roll-sh.used+0.00001){
+      const next=current.map(x=>({height:x.height,used:x.used,items:[...x.items]}));
+      next[i].height=Math.max(next[i].height,o.run);next[i].used+=o.across;next[i].items.push({...room,...o});search(pos+1,next);
+     }
+    }
+    for(const o of options(room)){const next=current.map(x=>({height:x.height,used:x.used,items:[...x.items]}));next.push({height:o.run,used:o.across,items:[{...room,...o}]});search(pos+1,next)}
+   }
+   search(0,[]);shelves=best||[];
+  }else{
+   for(const room of sorted){
+    let best=null;
+    for(let i=0;i<shelves.length;i++)for(const o of options(room)){
+     const sh=shelves[i];if(o.across<=roll-sh.used+0.00001){
+      const score=Math.max(0,o.run-sh.height)*100000+(roll-sh.used-o.across);
+      if(!best||score<best.score)best={i,o,score};
+     }
+    }
+    if(best){const sh=shelves[best.i];sh.height=Math.max(sh.height,best.o.run);sh.used+=best.o.across;sh.items.push({...room,...best.o})}
+    else {const opts=options(room).sort((a,b)=>a.run-b.run);if(opts.length){const o=opts[0];shelves.push({height:o.run,used:o.across,items:[{...room,...o}]})}}
+   }
+  }
+  const placed=shelves.flatMap(s=>s.items);
+  return {roll,shelves,placed,total:shelves.reduce((s,sh)=>s+sh.height,0)};
+ }
+ const plans=[2,3,4].map(makePlan).filter(p=>p.placed.length===rooms.length);
+ if(!plans.length){alert('At least one room is too wide for a 4m roll in either direction. Check the measurements or consider a different solution.');return}
+ plans.sort((a,b)=>a.roll-b.roll||a.total-b.total);
+ const plan=plans[0],supplied=plan.total*plan.roll,waste=Math.max(0,supplied-area);
+ const material=supplied*price,fit=Math.max(60,area*5),total=material+fit;
+ const cuts=plan.shelves.map((sh,i)=>'<div class="line"><b>Cut '+(i+1)+': '+sh.height.toFixed(2)+' linear metres</b> · '+sh.items.map(r=>esc(r.name)+' '+r.across.toFixed(2)+'m × '+r.run.toFixed(2)+'m'+(r.rotated?' (turned)':'')).join(' + ')+' · spare width '+Math.max(0,plan.roll-sh.used).toFixed(2)+'m</div>').join('');
+ saveQuote('vinyl',total,'<b>Selected '+plan.roll+'m roll</b> · '+plan.total.toFixed(2)+' linear metres<br>Room area: '+area.toFixed(2)+'m² · Vinyl supplied: '+supplied.toFixed(2)+'m² · Estimated waste: '+waste.toFixed(2)+'m²<br>'+cuts+'Vinyl: '+supplied.toFixed(2)+'m² × '+money(price)+'/m² = '+money(material)+' · Fitting: '+money(fit)+' (£5 per room m², £60 minimum)');
+}
 function calcLaminate(){const measured=measureRooms('lamRooms'),area=measured.area,per=measured.perimeter,pack=val('lamPackArea'),packPrice=val('lamPackPrice'),uc=val('lamUnderlayCoverage'),up=val('lamUnderlayPrice'),bp=val('lamBeadPrice');if(!area||!pack){alert('Enter floor area and laminate pack coverage.');return}const packs=Math.ceil(area/pack),mat=packs*packPrice,underPacks=uc?Math.ceil(area/uc):0,under=underPacks*up,beads=Math.ceil(per/2.4),beadCost=beads*bp,fit=Math.max(8,area)*15,total=mat+under+beadCost+fit;saveQuote('laminate',total,'Laminate: '+packs+' packs = '+money(mat)+' · Underlay: '+underPacks+' packs = '+money(under)+' · Beading: '+beads+' lengths × 2.4m = '+money(beadCost)+' · Fitting: '+money(fit)+' (£15/m², 8m² minimum)')}
 function calcLvt(){const area=measureRooms('lvtRooms').area,pack=val('lvtPackArea'),price=val('lvtPackPrice'),rate=val('lvtFitRate');if(!area||!pack){alert('Enter LVT area and pack coverage.');return}const packs=Math.ceil(area/pack),mat=packs*price,fit=area*rate,total=mat+fit;saveQuote('lvt',total,'LVT: '+packs+' packs = '+money(mat)+' · Fitting: '+area.toFixed(2)+'m² × '+money(rate)+' = '+money(fit))}
 function calcPrep(){const area=measureRooms('prepRooms').area,units=Math.floor(val('dpmUnits')),glueArea=area,screed=area?Math.max(80,area*17.5):0,dpm=units*200,glue=glueArea*2,total=screed+dpm+glue;saveQuote('prep',total,'Screed: '+money(screed)+' · DPM: '+units+' units = '+money(dpm)+' · Glue: '+glueArea.toFixed(2)+'m² = '+money(glue))}
