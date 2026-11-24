@@ -34,10 +34,10 @@ nav{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0}nav button{flex:1;min-widt
 
 </div>
 <div id="page-vinyl" class="page" hidden>
-<section class="card"><h2>Vinyl calculator</h2><p class="muted">Choose the vinyl roll width.</p>
+<section class="card"><h2>Vinyl calculator</h2><p class="muted">Enter each room’s measurements. The calculator automatically checks 2m, 3m and 4m rolls and chooses the narrowest width that fits all rooms.</p>
 <h3>Vinyl room measurements</h3><p class="muted">Add each room to calculate the total m² automatically.</p><div id="vinylRooms"></div><button type="button" class="gold" onclick="addMeasureRoom('vinylRooms')">+ Add room</button>
 <div class="grid">
-<div><label>Roll width</label><select id="vinylWidth"><option value="2">2m</option><option value="3">3m</option><option value="4">4m</option></select></div>
+<div><label>Roll width</label><div style="padding:12px;border:1px solid #ddd;border-radius:8px;background:#f4f1e9">Automatic selection: 2m, 3m or 4m</div></div>
 <div><label>Vinyl price per m² (£)</label><input id="vinylPrice" type="number" min="0" step=".01" placeholder="0.00"></div>
 </div><button onclick="calcVinyl()">Calculate vinyl</button><div id="vinylResult" class="line"></div></section>
 </div>
