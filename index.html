@@ -86,7 +86,9 @@ document.getElementById('calc').onclick=()=>{
  const placed=shelves.flatMap(s=>s.items),placedByIndex=new Map(placed.map(r=>[r.index,r]));
  const rows=raw.map(r=>{const p=placedByIndex.get(r.index);return p?{...p,ok:true}: {...r,ok:false}});
  document.getElementById('result').hidden=false;
- document.getElementById('metres').textContent=total.toFixed(2)+' m';\n document.getElementById('supplied').textContent=(total*roll).toFixed(2)+' m²';\n document.getElementById('roomarea').textContent=area.toFixed(2)+' m²';
+ document.getElementById('metres').textContent=total.toFixed(2)+' m';
+ document.getElementById('supplied').textContent=(total*roll).toFixed(2)+' m²';
+ document.getElementById('roomarea').textContent=area.toFixed(2)+' m²';
  document.getElementById('cost').textContent='£'+(total*roll*price).toFixed(2);
  document.getElementById('count').textContent=placed.length+' / '+raw.length;
  document.getElementById('waste').textContent=waste.toFixed(2)+' m²';
