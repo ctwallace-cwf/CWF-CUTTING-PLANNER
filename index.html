@@ -98,7 +98,7 @@ document.getElementById('calc').onclick=()=>{
    return {roll,valid,placed,shelves,total,supplied,area,waste:Math.max(0,supplied-area)};
  }
  const plans=[makePlan(4),makePlan(5)];
- plans.sort((a,b)=>b.placed.length-a.placed.length||a.supplied-b.supplied||a.roll-b.roll);
+ plans.sort((a,b)=>b.placed.length-a.placed.length||a.total-b.total||a.supplied-b.supplied||a.roll-b.roll);
  const plan=plans[0],roll=plan.roll,shelves=plan.shelves,placed=plan.placed,total=plan.total;
  const placedByIndex=new Map(placed.map(r=>[r.index,r]));
  const rows=raw.map(r=>{const p=placedByIndex.get(r.index);return p?{...p,ok:true}:{...r,ok:false}});
