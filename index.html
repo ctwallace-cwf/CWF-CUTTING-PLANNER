@@ -35,26 +35,31 @@ document.getElementById('calc').onclick=()=>{
  if(!raw.length){alert('Enter at least one room with valid measurements.');return}
  const invalid=raw.filter(r=>Math.min(r.w,r.l)>roll+0.00001);
  const valid=raw.filter(r=>Math.min(r.w,r.l)<=roll+0.00001);
- // Shelf packing: each shelf is a lengthwise cut section of the roll. Spare width
- // beside a room can be used by another shorter room in the same section.
- const sorted=[...valid].sort((a,b)=>(Math.max(b.w,b.l)-Math.max(a.w,a.l))||(b.w*b.l-a.w*a.l));
- const shelves=[];
+ // Greedy shelf packing: evaluate both orientations and choose the one
+ // that adds the least roll length while sharing width with existing sections.
+ const sorted=[...valid].sort((a,b)=>(b.w*b.l-a.w*a.l));
  for(const room of sorted){
    const options=[{across:room.w,run:room.l,rotated:false},{across:room.l,run:room.w,rotated:true}].filter(o=>o.across<=roll+0.00001);
    let best=null;
    for(let si=0;si<shelves.length;si++){
      const sh=shelves[si];
      for(const o of options){
-       if(o.across<=roll-sh.used+0.00001 && o.run<=sh.height+0.00001){
-         const score=(roll-sh.used-o.across)*1000+(sh.height-o.run);
+       if(o.across<=roll-sh.used+0.00001){
+         const extra=Math.max(0,o.run-sh.height);
+         const score=extra*100000+(roll-sh.used-o.across);
          if(!best||score<best.score)best={si,o,score};
        }
      }
    }
-   if(best){const sh=shelves[best.si];sh.items.push({...room,...best.o});sh.used+=best.o.across;}
-   else{
-     options.sort((a,b)=>a.run-b.run);
-     const o=options[0];shelves.push({height:o.run,used:o.across,items:[{...room,...o}]});
+   if(best){
+     const sh=shelves[best.si];
+     sh.height=Math.max(sh.height,best.o.run);
+     sh.items.push({...room,...best.o});
+     sh.used+=best.o.across;
+   }else{
+     options.sort((a,b)=>(a.run*100000+(roll-a.across))-(b.run*100000+(roll-b.across)));
+     const o=options[0];
+     shelves.push({height:o.run,used:o.across,items:[{...room,...o}]});
    }
  }
  const total=shelves.reduce((s,sh)=>s+sh.height,0),area=valid.reduce((s,r)=>s+r.w*r.l,0),waste=Math.max(0,roll*total-area);
