@@ -44,7 +44,7 @@ nav{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0}nav button{flex:1;min-widt
 <div id="page-laminate" class="page" hidden>
 <section class="card"><h2>Laminate calculator</h2><h3>Laminate room measurements</h3><p class="muted">Add each room; floor area and total perimeter are calculated automatically.</p><div id="lamRooms"></div><button type="button" class="gold" onclick="addMeasureRoom('lamRooms')">+ Add room</button><label style="display:flex;align-items:center;gap:8px;font-size:15px;margin:12px 0"><input id="lamWaste" type="checkbox" style="width:auto"> Add 20% extra for wastage</label><div class="grid">
 <div><label>Laminate pack coverage (m²)</label><input id="lamPackArea" type="number" min=".01" step=".01" placeholder="e.g. 2.2"></div>
-<div><label>Laminate price per m² (£)</label><input id="lamM2Price" type="number" min="0" step=".01" placeholder="0.00"></div>
+<div><label>Laminate MATERIAL PRICE per m² (£) — not per pack</label><input id="lamM2Price" type="number" min="0" step=".01" placeholder="0.00"></div>
 <div><label>Underlay pack coverage (m²)</label><input id="lamUnderlayCoverage" type="number" min=".01" step=".01" placeholder="e.g. 10"></div>
 <div><label>Underlay price per pack (£)</label><input id="lamUnderlayPrice" type="number" min="0" step=".01" placeholder="0.00"></div>
 <div><label>Beading price per 2.4m length (£)</label><input id="lamBeadPrice" type="number" min="0" step=".01" placeholder="0.00"></div>
@@ -53,7 +53,7 @@ nav{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0}nav button{flex:1;min-widt
 <div id="page-lvt" class="page" hidden>
 <section class="card"><h2>LVT calculator</h2><h3>LVT room measurements</h3><p class="muted">Add each room to calculate the total m² automatically.</p><div id="lvtRooms"></div><button type="button" class="gold" onclick="addMeasureRoom('lvtRooms')">+ Add room</button><label style="display:flex;align-items:center;gap:8px;font-size:15px;margin:12px 0"><input id="lvtWaste" type="checkbox" style="width:auto"> Add 10% extra for wastage</label><div class="grid">
 <div><label>LVT pack coverage (m²)</label><input id="lvtPackArea" type="number" min=".01" step=".01" placeholder="e.g. 3.0"></div>
-<div><label>LVT price per m² (£)</label><input id="lvtM2Price" type="number" min="0" step=".01" placeholder="0.00"></div>
+<div><label>LVT MATERIAL PRICE per m² (£) — not per pack</label><input id="lvtM2Price" type="number" min="0" step=".01" placeholder="0.00"></div>
 <div><label>LVT fitting price per m² (£)</label><input id="lvtFitRate" type="number" min="0" step=".01" placeholder="Enter your rate"></div>
 </div><button onclick="calcLvt()">Calculate LVT</button><div id="lvtResult" class="line"></div><button type="button" class="gold" onclick="saveSectionPdf('lvtResult','CWF LVT Quotation')">Save LVT quotation as PDF</button></section>
 </div>
