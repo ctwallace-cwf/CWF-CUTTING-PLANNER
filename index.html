@@ -1,17 +1,77 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>CWF Cutting Planner</title>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>CWF Cutting Planner</title>
 <style>
-*{box-sizing:border-box}body{margin:0;background:#f4f4f2;color:#222;font:16px Arial,sans-serif}.head{background:#171717;color:white;padding:24px}.head small{color:#d7b56d;letter-spacing:2px;font-weight:bold}.head h1{margin:8px 0}.wrap{max-width:850px;margin:auto;padding:16px}.card{background:white;border:1px solid #ddd;border-radius:12px;padding:16px;margin:14px 0}h2{font-size:18px;margin:0 0 14px}.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}label{display:block;font-size:12px;font-weight:bold;color:#555;margin-bottom:5px}input,select{width:100%;padding:12px;border:1px solid #bbb;border-radius:8px;font-size:16px}.room{display:grid;grid-template-columns:1.4fr 1fr 1fr 40px;gap:8px;margin:12px 0;align-items:end}button{padding:12px 16px;border:0;border-radius:8px;font-weight:bold;font-size:15px;background:#171717;color:white;margin:4px 4px 4px 0}.gold{background:#d7b56d;color:#171717}.remove{background:#eee;color:#222}.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.stat{background:#f4f1e9;padding:12px;border-radius:8px}.stat b{display:block;font-size:20px;margin-top:5px}.line{padding:10px 0;border-bottom:1px solid #eee}.muted{font-size:12px;color:#666}@media(max-width:560px){.grid{grid-template-columns:1fr}.room{grid-template-columns:1fr 1fr 1fr 36px}.stats{grid-template-columns:1fr 1fr}}@media print{.head{background:white;color:black;border-bottom:2px solid}.no-print{display:none}.wrap{padding:0}}
-</style></head><body>
+*{box-sizing:border-box}body{margin:0;background:#f4f4f2;color:#222;font:16px Arial,sans-serif}.head{background:#171717;color:white;padding:24px}.head small{color:#d7b56d;letter-spacing:2px;font-weight:bold}.head h1{margin:8px 0}.wrap{max-width:900px;margin:auto;padding:16px}.card{background:white;border:1px solid #ddd;border-radius:12px;padding:16px;margin:14px 0}h2{font-size:18px;margin:0 0 14px}.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}label{display:block;font-size:12px;font-weight:bold;color:#555;margin-bottom:5px}input,select{width:100%;padding:12px;border:1px solid #bbb;border-radius:8px;font-size:16px}.room{display:grid;grid-template-columns:1.4fr 1fr 1fr 40px;gap:8px;margin:12px 0;align-items:end}button{padding:12px 16px;border:0;border-radius:8px;font-weight:bold;font-size:15px;background:#171717;color:white;margin:4px 4px 4px 0}.gold{background:#d7b56d;color:#171717}.remove{background:#eee;color:#222}.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.stat{background:#f4f1e9;padding:12px;border-radius:8px}.stat b{display:block;font-size:20px;margin-top:5px}.line{padding:10px 0;border-bottom:1px solid #eee}.muted{font-size:12px;color:#666}.shelf{border:1px solid #c9b783;border-radius:8px;margin:12px 0;padding:10px;background:#faf8f2}.piece{display:inline-block;background:#e8d7a9;border:1px solid #987d42;border-radius:5px;padding:8px;margin:3px;font-size:12px}.offcut{color:#666;font-size:12px;margin-top:6px}.notice{background:#fff8e8;border-left:4px solid #d7b56d;padding:10px;font-size:13px}@media(max-width:600px){.grid{grid-template-columns:1fr}.room{grid-template-columns:1fr 1fr 1fr 36px}.stats{grid-template-columns:1fr 1fr}}@media print{.head{background:white;color:black;border-bottom:2px solid}.no-print{display:none!important}.wrap{padding:0}.card{break-inside:avoid}}
+</style>
+</head>
+<body>
 <header class="head"><div class="wrap"><small>CHRIS WALLACE FLOORING</small><h1>CWF Cutting Planner</h1><div>Carpet room measurements and roll calculations</div></div></header>
 <main class="wrap">
-<section class="card"><h2>Job details</h2><div class="grid"><div><label>Customer / job name</label><input id="customer" placeholder="Customer name"></div><div><label>Date</label><input id="date" type="date"></div><div><label>Carpet roll width</label><select id="roll"><option value="4">4 metre</option><option value="5">5 metre</option></select></div><div><label>Price per linear metre (£)</label><input id="price" type="number" min="0" step=".01" placeholder="0.00"></div></div></section>
-<section class="card"><h2>Room measurements</h2><p class="muted">Enter each room's width and length in metres. The planner checks both orientations against the selected roll width.</p><div id="rooms"></div><div class="no-print"><button class="gold" id="add">+ Add room</button><button id="calc">Calculate plan</button></div></section>
-<section class="card" id="result" hidden><h2>Cutting plan</h2><div class="stats"><div class="stat"><span class="muted">Linear metres</span><b id="metres">—</b></div><div class="stat"><span class="muted">Estimated cost</span><b id="cost">—</b></div><div class="stat"><span class="muted">Rooms fitting</span><b id="count">—</b></div></div><div id="cuts"></div><p class="muted" id="warning"></p><div class="no-print"><button onclick="window.print()">Print fitter's sheet</button></div></section>
-<p class="muted" style="text-align:center">Prototype: always verify measurements, pattern match and pile direction before cutting.</p></main>
+<section class="card"><h2>Job details</h2><div class="grid">
+<div><label>Customer / job name</label><input id="customer" placeholder="Customer name"></div>
+<div><label>Date</label><input id="date" type="date"></div>
+<div><label>Carpet roll width</label><select id="roll"><option value="4">4 metre</option><option value="5">5 metre</option></select></div>
+<div><label>Price per linear metre (£)</label><input id="price" type="number" min="0" step=".01" placeholder="0.00"></div>
+</div></section>
+<section class="card"><h2>Room measurements</h2><p class="muted">Enter the finished room width and length in metres. The planner tries both directions and groups rooms together where they fit across the roll.</p><div id="rooms"></div><div class="no-print"><button class="gold" id="add">+ Add room</button><button id="calc">Calculate cutting plan</button></div></section>
+<section class="card" id="result" hidden><h2>Cutting plan</h2>
+<div class="stats"><div class="stat"><span class="muted">Linear metres</span><b id="metres">—</b></div><div class="stat"><span class="muted">Estimated carpet cost</span><b id="cost">—</b></div><div class="stat"><span class="muted">Rooms fitting</span><b id="count">—</b></div><div class="stat"><span class="muted">Estimated waste</span><b id="waste">—</b></div></div>
+<div id="cuts"></div><h3>Roll layout</h3><div id="layout"></div>
+<p class="notice">This is a first-fit cutting estimate, not a guaranteed nesting solution. Check pile direction, pattern repeats, matching, doorway turns and fitting allowances before ordering or cutting.</p>
+<div class="no-print"><button onclick="window.print()">Print fitter's sheet</button></div>
+</section>
+<p class="muted" style="text-align:center">CWF Cutting Planner · Check all measurements before cutting.</p>
+</main>
 <script>
-const list=document.getElementById('rooms');function addRoom(){const row=document.createElement('div');row.className='room';row.innerHTML='<div><label>Room name</label><input class="name" placeholder="Lounge"></div><div><label>Width (m)</label><input class="w" type="number" min=".01" step=".01" placeholder="3.50"></div><div><label>Length (m)</label><input class="l" type="number" min=".01" step=".01" placeholder="4.20"></div><button class="remove no-print" type="button">×</button>';row.querySelector('button').onclick=()=>row.remove();list.appendChild(row)}
+const list=document.getElementById('rooms');
+function addRoom(){const row=document.createElement('div');row.className='room';row.innerHTML='<div><label>Room name</label><input class="name" placeholder="Lounge"></div><div><label>Width (m)</label><input class="w" type="number" min=".01" step=".01" placeholder="3.50"></div><div><label>Length (m)</label><input class="l" type="number" min=".01" step=".01" placeholder="4.20"></div><button class="remove no-print" type="button" aria-label="Remove room">×</button>';row.querySelector('button').onclick=()=>row.remove();list.appendChild(row)}
 addRoom();document.getElementById('add').onclick=addRoom;document.getElementById('date').value=new Date().toISOString().slice(0,10);
-document.getElementById('calc').onclick=()=>{const roll=Number(document.getElementById('roll').value),price=Number(document.getElementById('price').value)||0;const rooms=[...list.querySelectorAll('.room')].map((r,i)=>({name:r.querySelector('.name').value.trim()||'Room '+(i+1),w:Number(r.querySelector('.w').value),l:Number(r.querySelector('.l').value)})).filter(r=>r.w>0&&r.l>0);if(!rooms.length){alert('Enter at least one room with valid measurements.');return}let total=0,fit=0;const rows=rooms.map(r=>{const choices=[{across:r.w,run:r.l,rotated:false},{across:r.l,run:r.w,rotated:true}].filter(o=>o.across<=roll).sort((a,b)=>a.run-b.run);if(!choices.length)return {...r,ok:false};const c=choices[0];total+=c.run;fit++;return {...r,...c,ok:true}});document.getElementById('result').hidden=false;document.getElementById('metres').textContent=total.toFixed(2)+' m';document.getElementById('cost').textContent='£'+(total*price).toFixed(2);document.getElementById('count').textContent=fit+' / '+rooms.length;document.getElementById('cuts').innerHTML='<p><b>'+esc(document.getElementById('customer').value||'CWF job')+'</b> · '+document.getElementById('date').value+' · '+roll+'m roll</p>'+rows.map((r,i)=>'<div class="line"><b>'+(i+1)+'. '+esc(r.name)+'</b><br>'+(r.ok?r.across.toFixed(2)+'m across × '+r.run.toFixed(2)+'m long'+(r.rotated?' (rotated)':''):'<span style="color:#a33">Does not fit this roll width</span>')+'</div>').join('')+'<p><b>Total required: '+total.toFixed(2)+' linear metres</b></p>';document.getElementById('warning').textContent=rows.some(r=>!r.ok)?'One or more rooms are wider than the selected roll in both orientations.':''};
-function esc(s){return s.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
-</script></body></html>
+document.getElementById('calc').onclick=()=>{
+ const roll=Number(document.getElementById('roll').value),price=Number(document.getElementById('price').value)||0;
+ const raw=[...list.querySelectorAll('.room')].map((r,i)=>({name:r.querySelector('.name').value.trim()||'Room '+(i+1),w:Number(r.querySelector('.w').value),l:Number(r.querySelector('.l').value),index:i})).filter(r=>r.w>0&&r.l>0);
+ if(!raw.length){alert('Enter at least one room with valid measurements.');return}
+ const invalid=raw.filter(r=>Math.min(r.w,r.l)>roll+0.00001);
+ const valid=raw.filter(r=>Math.min(r.w,r.l)<=roll+0.00001);
+ // Shelf packing: each shelf is a lengthwise cut section of the roll. Spare width
+ // beside a room can be used by another shorter room in the same section.
+ const sorted=[...valid].sort((a,b)=>(Math.max(b.w,b.l)-Math.max(a.w,a.l))||(b.w*b.l-a.w*a.l));
+ const shelves=[];
+ for(const room of sorted){
+   const options=[{across:room.w,run:room.l,rotated:false},{across:room.l,run:room.w,rotated:true}].filter(o=>o.across<=roll+0.00001);
+   let best=null;
+   for(let si=0;si<shelves.length;si++){
+     const sh=shelves[si];
+     for(const o of options){
+       if(o.across<=roll-sh.used+0.00001 && o.run<=sh.height+0.00001){
+         const score=(roll-sh.used-o.across)*1000+(sh.height-o.run);
+         if(!best||score<best.score)best={si,o,score};
+       }
+     }
+   }
+   if(best){const sh=shelves[best.si];sh.items.push({...room,...best.o});sh.used+=best.o.across;}
+   else{
+     options.sort((a,b)=>a.run-b.run);
+     const o=options[0];shelves.push({height:o.run,used:o.across,items:[{...room,...o}]});
+   }
+ }
+ const total=shelves.reduce((s,sh)=>s+sh.height,0),area=valid.reduce((s,r)=>s+r.w*r.l,0),waste=Math.max(0,roll*total-area);
+ const placed=shelves.flatMap(s=>s.items),placedByIndex=new Map(placed.map(r=>[r.index,r]));
+ const rows=raw.map(r=>{const p=placedByIndex.get(r.index);return p?{...p,ok:true}: {...r,ok:false}});
+ document.getElementById('result').hidden=false;
+ document.getElementById('metres').textContent=total.toFixed(2)+' m';
+ document.getElementById('cost').textContent='£'+(total*price).toFixed(2);
+ document.getElementById('count').textContent=placed.length+' / '+raw.length;
+ document.getElementById('waste').textContent=waste.toFixed(2)+' m²';
+ const job=esc(document.getElementById('customer').value||'CWF job'),date=esc(document.getElementById('date').value||'');
+ document.getElementById('cuts').innerHTML='<p><b>'+job+'</b> · '+date+' · '+roll+'m roll</p>'+rows.map((r,i)=>'<div class="line"><b>'+(i+1)+'. '+esc(r.name)+'</b><br>'+(r.ok?r.across.toFixed(2)+'m across × '+r.run.toFixed(2)+'m long'+(r.rotated?' (turned)':'')+' · Cut section '+(shelves.findIndex(s=>s.items.some(x=>x.index===r.index))+1):'<span style="color:#a33">Does not fit the selected roll width</span>')+'</div>').join('')+'<p><b>Total roll length: '+total.toFixed(2)+' linear metres</b></p>';
+ document.getElementById('layout').innerHTML=shelves.map((sh,i)=>'<div class="shelf"><b>Cut section '+(i+1)+' · '+sh.height.toFixed(2)+'m long</b><div>'+sh.items.map(p=>'<span class="piece">'+esc(p.name)+'<br>'+p.across.toFixed(2)+'m × '+p.run.toFixed(2)+'m</span>').join('')+'</div><div class="offcut">Unused width in this section: '+Math.max(0,roll-sh.used).toFixed(2)+'m across the full section length</div></div>').join('');
+ document.getElementById('warning');
+ if(invalid.length)document.querySelector('.notice').textContent='These rooms are too wide for the selected roll in either direction: '+invalid.map(r=>r.name).join(', ')+'. '+ 'This is a first-fit cutting estimate, not a guaranteed nesting solution. Check pile direction, pattern repeats, matching, doorway turns and fitting allowances before ordering or cutting.';
+ else document.querySelector('.notice').textContent='This is a first-fit cutting estimate, not a guaranteed nesting solution. Check pile direction, pattern repeats, matching, doorway turns and fitting allowances before ordering or cutting.';
+};
+function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+</script>
+</body></html>
