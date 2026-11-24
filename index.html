@@ -19,10 +19,11 @@
 <div><label>Include underlay?</label><label style="display:flex;align-items:center;gap:8px;font-size:15px"><input id="underlayEnabled" type="checkbox" style="width:auto"> Yes, add underlay</label></div>
 <div><label>Standard doorplates (£5 each)</label><input id="standardPlates" type="number" min="0" step="1" value="0"></div>
 <div><label>Special doorplates (£15 each)</label><input id="specialPlates" type="number" min="0" step="1" value="0"></div>
+<div><label>Stairs and landing</label><label style="display:flex;align-items:center;gap:8px;font-size:15px"><input id="stairsEnabled" type="checkbox" style="width:auto"> Add £60 stairs and landing surcharge</label></div>
 </div></section>
 <section class="card"><h2>Room measurements</h2><p class="muted">Enter the finished room width and length in metres. The planner tries both directions and groups rooms together where they fit across the roll.</p><div id="rooms"></div><div class="no-print"><button class="gold" id="add">+ Add room</button><button id="calc">Calculate cutting plan</button></div></section>
 <section class="card" id="result" hidden><h2>Cutting plan</h2>
-<div class="stats"><div class="stat"><span class="muted">Linear metres</span><b id="metres">—</b></div><div class="stat"><span class="muted">Carpet supplied (m²)</span><b id="supplied">—</b></div><div class="stat"><span class="muted">Room area (m²)</span><b id="roomarea">—</b></div><div class="stat"><span class="muted">Estimated waste (m²)</span><b id="waste">—</b></div><div class="stat"><span class="muted">Carpet cost</span><b id="cost">—</b></div><div class="stat"><span class="muted">Underlay cost</span><b id="underlayCost">—</b></div><div class="stat"><span class="muted">Doorplates</span><b id="plateCost">—</b></div><div class="stat"><span class="muted">Total job materials</span><b id="grandTotal">—</b></div><div class="stat"><span class="muted">Rooms fitting</span><b id="count">—</b></div></div>
+<div class="stats"><div class="stat"><span class="muted">Linear metres</span><b id="metres">—</b></div><div class="stat"><span class="muted">Carpet supplied (m²)</span><b id="supplied">—</b></div><div class="stat"><span class="muted">Room area (m²)</span><b id="roomarea">—</b></div><div class="stat"><span class="muted">Estimated waste (m²)</span><b id="waste">—</b></div><div class="stat"><span class="muted">Carpet cost</span><b id="cost">—</b></div><div class="stat"><span class="muted">Underlay cost</span><b id="underlayCost">—</b></div><div class="stat"><span class="muted">Doorplates</span><b id="plateCost">—</b></div><div class="stat"><span class="muted">Total job materials</span><b id="grandTotal">—</b></div><div class="stat"><span class="muted">Fitting charge</span><b id="fittingCost">—</b></div><div class="stat"><span class="muted">Total including fitting</span><b id="jobTotal">—</b></div><div class="stat"><span class="muted">Rooms fitting</span><b id="count">—</b></div></div>
 <div id="cuts"></div><h3>Roll layout</h3><div id="layout"></div>
 <p class="notice">This is a first-fit cutting estimate, not a guaranteed nesting solution. Check pile direction, pattern repeats, matching, doorway turns and fitting allowances before ordering or cutting.</p>
 <div class="no-print"><button onclick="window.print()">Print fitter's sheet</button></div>
@@ -39,6 +40,7 @@ document.getElementById('calc').onclick=()=>{
  const underlayPrice=Number(document.getElementById('underlayPrice').value)||0;
  const standardPlates=Math.max(0,Math.floor(Number(document.getElementById('standardPlates').value)||0));
  const specialPlates=Math.max(0,Math.floor(Number(document.getElementById('specialPlates').value)||0));
+ const stairsEnabled=document.getElementById('stairsEnabled').checked;
  const raw=[...list.querySelectorAll('.room')].map((r,i)=>({name:r.querySelector('.name').value.trim()||'Room '+(i+1),w:Number(r.querySelector('.w').value),l:Number(r.querySelector('.l').value),index:i})).filter(r=>r.w>0&&r.l>0);
  if(!raw.length){alert('Enter at least one room with valid measurements.');return}
  function makePlan(roll){
@@ -110,10 +112,15 @@ document.getElementById('calc').onclick=()=>{
  const underlayCost=underlayEnabled?underlayArea*underlayPrice:0;
  const plateCost=standardPlates*5+specialPlates*15;
  const grandTotal=carpetCost+underlayCost+plateCost;
+ const roomFitting=raw.map(r=>({name:r.name,area:r.w*r.l,charge:Math.max(60,r.w*r.l*5)}));
+ const fittingCost=roomFitting.reduce((sum,r)=>sum+r.charge,0)+(stairsEnabled?60:0);
+ const jobTotal=grandTotal+fittingCost;
  document.getElementById('cost').textContent='£'+carpetCost.toFixed(2);
  document.getElementById('underlayCost').textContent='£'+underlayCost.toFixed(2);
  document.getElementById('plateCost').textContent='£'+plateCost.toFixed(2);
  document.getElementById('grandTotal').textContent='£'+grandTotal.toFixed(2);
+ document.getElementById('fittingCost').textContent='£'+fittingCost.toFixed(2);
+ document.getElementById('jobTotal').textContent='£'+jobTotal.toFixed(2);
  document.getElementById('count').textContent=placed.length+' / '+raw.length;
  document.getElementById('waste').textContent=plan.waste.toFixed(2)+' m²';
  const job=esc(document.getElementById('customer').value||'CWF job'),date=esc(document.getElementById('date').value||'');
@@ -122,7 +129,10 @@ document.getElementById('calc').onclick=()=>{
  +(underlayEnabled?'<div class="line">Underlay: '+underlayArea.toFixed(2)+' room m² × £'+underlayPrice.toFixed(2)+' = <b>£'+underlayCost.toFixed(2)+'</b></div>':'<div class="line">Underlay: not selected</div>')
  +'<div class="line">Standard doorplates: '+standardPlates+' × £5 = <b>£'+(standardPlates*5).toFixed(2)+'</b></div>'
  +'<div class="line">Special doorplates: '+specialPlates+' × £15 = <b>£'+(specialPlates*15).toFixed(2)+'</b></div>'
- +'<p><b>Total materials: £'+grandTotal.toFixed(2)+'</b></p>';
+ +'<p><b>Total materials: £'+grandTotal.toFixed(2)+'</b></p>'
+ +'<h3>Fitting charges</h3>'+roomFitting.map(r=>'<div class="line">'+esc(r.name)+': '+r.area.toFixed(2)+'m² × £5/m² (minimum 12m²) = <b>£'+r.charge.toFixed(2)+'</b></div>').join('')
+ +(stairsEnabled?'<div class="line">Stairs and landing surcharge: <b>£60.00</b></div>':'')
+ +'<p><b>Total fitting: £'+fittingCost.toFixed(2)+'</b></p><p><b>Total job including materials and fitting: £'+jobTotal.toFixed(2)+'</b></p>';
  document.getElementById('layout').innerHTML=shelves.map((sh,i)=>'<div class="shelf"><b>Cut section '+(i+1)+' · '+sh.height.toFixed(2)+'m long</b><div>'+sh.items.map(p=>'<span class="piece">'+esc(p.name)+'<br>'+p.across.toFixed(2)+'m × '+p.run.toFixed(2)+'m</span>').join('')+'</div><div class="offcut">Unused width in this section: '+Math.max(0,roll-sh.used).toFixed(2)+'m across the full section length</div></div>').join('');
  const notice=document.querySelector('.notice');
  notice.textContent=invalid.length?'These rooms do not fit either the 4m or 5m roll in either direction: '+invalid.map(r=>r.name).join(', ')+'. Check measurements or consider a different solution.':'Automatic comparison selected the option that fits the most rooms, then uses the least total carpet area. Check pile direction, pattern repeats, matching, doorway turns and fitting allowances before ordering or cutting.';
