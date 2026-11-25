@@ -24,7 +24,7 @@ nav{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0}nav button{flex:1;min-widt
 <div><label>Include underlay?</label><label style="display:flex;align-items:center;gap:8px;font-size:15px"><input id="underlayEnabled" type="checkbox" style="width:auto"> Yes, add underlay</label></div>
 </div></section>
 <section class="card"><h2>Carpet fitting</h2><div class="grid"><div><label>Fitting charge (automatically included)</label><div style="padding:12px;border:1px solid #ddd;border-radius:8px;background:#f4f1e9">£5 per room m² · £60 minimum per room (12m²)</div></div>
-<div><label>Stairs and landing</label><label style="display:flex;align-items:center;gap:8px;font-size:15px"><input id="stairsEnabled" type="checkbox" style="width:auto"> Add £60 stairs and landing surcharge</label></div>
+<div><label>Hall surcharge</label><label style="display:flex;align-items:center;gap:8px;font-size:15px"><input id="hallEnabled" type="checkbox" style="width:auto"> Add £30 hall surcharge</label></div><div><label>Stairs & landing</label><label style="display:flex;align-items:center;gap:8px;font-size:15px"><input id="stairsEnabled" type="checkbox" style="width:auto"> £50 surcharge (minimum £100 total fitting)</label></div><div><label>Wrap-round stairs</label><label style="display:flex;align-items:center;gap:8px;font-size:15px"><input id="wrapStairsEnabled" type="checkbox" style="width:auto"> Add £100 surcharge</label></div><div><label>Double staircase</label><label style="display:flex;align-items:center;gap:8px;font-size:15px"><input id="doubleStairsEnabled" type="checkbox" style="width:auto"> Add £80 surcharge</label></div>
 </div></section>
 <section class="card"><h2>Room measurements</h2><p class="muted">Enter the finished room width and length in metres. The planner tries both directions and groups rooms together where they fit across the roll.</p><div id="rooms"></div><div class="no-print"><button class="gold" id="add">+ Add room</button><button id="calc">Calculate cutting plan</button></div></section>
 <section class="card" id="result" hidden><h2>Cutting plan</h2>
@@ -94,7 +94,7 @@ document.getElementById('calc').onclick=()=>{
  const underlayPrice=Number(document.getElementById('underlayPrice').value)||0;
  const standardPlates=Math.max(0,Math.floor(Number(document.getElementById('standardPlates').value)||0));
  const specialPlates=Math.max(0,Math.floor(Number(document.getElementById('specialPlates').value)||0));
- const stairsEnabled=document.getElementById('stairsEnabled').checked;
+ const stairsEnabled=document.getElementById('stairsEnabled').checked, hallEnabled=document.getElementById('hallEnabled').checked, wrapStairsEnabled=document.getElementById('wrapStairsEnabled').checked, doubleStairsEnabled=document.getElementById('doubleStairsEnabled').checked;
  const raw=[...list.querySelectorAll('.room')].map((r,i)=>({name:r.querySelector('.name').value.trim()||'Room '+(i+1),w:Number(r.querySelector('.w').value),l:Number(r.querySelector('.l').value),index:i})).filter(r=>r.w>0&&r.l>0);
  if(!raw.length){alert('Enter at least one room with valid measurements.');return}
  function makePlan(roll){
@@ -165,7 +165,7 @@ document.getElementById('calc').onclick=()=>{
  const plateCost=standardPlates*5+specialPlates*15;
  const grandTotal=carpetCost+underlayCost+plateCost;
  const roomFitting=raw.map(r=>({name:r.name,area:r.w*r.l,charge:Math.max(60,r.w*r.l*5)}));
- const fittingCost=roomFitting.reduce((sum,r)=>sum+r.charge,0)+(stairsEnabled?60:0);
+ const baseRoomFitting=roomFitting.reduce((sum,r)=>sum+r.charge,0); const fittingCost=baseRoomFitting+(hallEnabled?30:0)+(wrapStairsEnabled?100:0)+(doubleStairsEnabled?80:0)+(stairsEnabled?Math.max(50,100-baseRoomFitting):0);
  const jobTotal=grandTotal+fittingCost;
  quoteTotals.carpet=jobTotal; fittingTotals.carpet=fittingCost;
  document.getElementById('cost').textContent='£'+carpetCost.toFixed(2);
@@ -184,7 +184,7 @@ document.getElementById('calc').onclick=()=>{
  +'<div class="line">Special doorplates: '+specialPlates+' × £15 = <b>£'+(specialPlates*15).toFixed(2)+'</b></div>'
  +'<p><b>Total materials: £'+grandTotal.toFixed(2)+'</b></p>'
  +'<h3>Fitting charges</h3>'+roomFitting.map(r=>'<div class="line">'+esc(r.name)+': '+r.area.toFixed(2)+'m² × £5/m² (minimum 12m²) = <b>£'+r.charge.toFixed(2)+'</b></div>').join('')
- +(stairsEnabled?'<div class="line">Stairs and landing surcharge: <b>£60.00</b></div>':'')
+ +(hallEnabled?'<div class="line">Hall surcharge: <b>£30.00</b></div>':'')+(stairsEnabled?'<div class="line">Stairs and landing: £50 surcharge, fitting total adjusted to minimum £100</div>':'')+(wrapStairsEnabled?'<div class="line">Wrap-round stairs surcharge: <b>£100.00</b></div>':'')+(doubleStairsEnabled?'<div class="line">Double staircase surcharge: <b>£80.00</b></div>':'')
  +'<p><b>Total fitting: £'+fittingCost.toFixed(2)+'</b></p><p><b>Total job including materials and fitting: £'+jobTotal.toFixed(2)+'</b></p>';
  document.getElementById('layout').innerHTML=shelves.map((sh,i)=>'<div class="shelf"><b>Cut section '+(i+1)+' · '+sh.height.toFixed(2)+'m long</b><div>'+sh.items.map(p=>'<span class="piece">'+esc(p.name)+'<br>'+p.across.toFixed(2)+'m × '+p.run.toFixed(2)+'m</span>').join('')+'</div><div class="offcut">Unused width in this section: '+Math.max(0,roll-sh.used).toFixed(2)+'m across the full section length</div></div>').join('');
  const notice=document.querySelector('.notice');
