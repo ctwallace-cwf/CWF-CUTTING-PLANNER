@@ -207,7 +207,25 @@ function val(id){return Math.max(0,Number(document.getElementById(id).value)||0)
 function money(n){return '£'+n.toFixed(2)}
 function saveQuote(key,total,detail){quoteTotals[key]=total;document.getElementById(key==='vinyl'?'vinylResult':key==='laminate'?'lamResult':key==='lvt'?'lvtResult':'prepResult').innerHTML=detail+'<br><b>Section total: '+money(total)+'</b>';renderQuote()}
 function getSavedQuotes(){try{return JSON.parse(localStorage.getItem('cwf_saved_quotes')||'[]')}catch(e){return []}}
-function saveCurrentQuote(){const customer=(document.getElementById('customer').value||'Unnamed customer').trim(),date=document.getElementById('date').value||new Date().toISOString().slice(0,10),total=Object.values(quoteTotals).reduce((a,b)=>a+b,0);if(total<=0){alert('Calculate at least one section before saving the quotation.');return}const breakdown=document.getElementById('quoteBreakdown').innerText,details=['Carpet','Vinyl','Laminate','LVT','Screed / DPM / Glue'].map((name,i)=>{const ids=['result','vinylResult','lamResult','lvtResult','prepResult'];return document.getElementById(ids[i]).textContent.trim()}).filter(Boolean).join('\\n\\n');const q={id:Date.now(),customer,date,total,breakdown,details};const saved=getSavedQuotes();saved.unshift(q);localStorage.setItem('cwf_saved_quotes',JSON.stringify(saved));renderSavedQuotes();alert('Quotation saved on this device.');}
+function saveCurrentQuote(){
+ try{
+  const customer=(document.getElementById('customer').value||'Unnamed customer').trim();
+  const date=document.getElementById('date').value||new Date().toISOString().slice(0,10);
+  const total=Object.values(quoteTotals).reduce((a,b)=>a+b,0);
+  if(total<=0){alert('Calculate at least one section before saving the quotation.');return}
+  const breakdown=document.getElementById('quoteBreakdown').textContent||'';
+  const ids=['result','vinylResult','lamResult','lvtResult','prepResult'];
+  const details=ids.map(id=>{const el=document.getElementById(id);return el&&!el.hidden?el.textContent.trim():''}).filter(Boolean).join('\\n\\n');
+  const q={id:Date.now(),customer,date,total,breakdown,details};
+  const saved=getSavedQuotes();
+  saved.unshift(q);
+  localStorage.setItem('cwf_saved_quotes',JSON.stringify(saved));
+  renderSavedQuotes();
+  alert('Quotation saved successfully on this device.');
+ }catch(error){
+  alert('The quotation could not be saved. Error: '+(error&&error.message?error.message:'Unknown error')+'\\n\\nTry opening the app directly in Safari.');
+ }
+}
 function renderSavedQuotes(){const list=document.getElementById('savedQuotes');if(!list)return;const saved=getSavedQuotes();if(!saved.length){list.innerHTML='<p class="muted">No quotations saved on this device yet.</p>';return}list.innerHTML=saved.map(q=>'<div class="line"><b>'+esc(q.customer)+'</b> · '+esc(q.date)+' · <b>'+money(q.total)+'</b><br><button type="button" class="gold" onclick="downloadSavedQuote('+q.id+')">PDF</button><button type="button" class="remove" onclick="deleteSavedQuote('+q.id+')">Delete</button></div>').join('')}
 function deleteSavedQuote(id){if(!confirm('Delete this saved quotation?'))return;localStorage.setItem('cwf_saved_quotes',JSON.stringify(getSavedQuotes().filter(q=>q.id!==id)));renderSavedQuotes()}
 function downloadSavedQuote(id){const q=getSavedQuotes().find(x=>x.id===id);if(!q)return;if(!window.jspdf||!window.jspdf.jsPDF){alert('PDF tool is still loading. Please try again.');return}const doc=new window.jspdf.jsPDF({unit:'mm',format:'a4'}),margin=15,width=180,yStart=20;let y=yStart;doc.setFont('helvetica','bold');doc.setFontSize(18);doc.text('CHRIS WALLACE FLOORING',margin,y);y+=9;doc.setFontSize(14);doc.text('Saved quotation',margin,y);y+=8;doc.setFont('helvetica','normal');doc.setFontSize(11);doc.text('Customer: '+q.customer,margin,y);y+=6;doc.text('Date: '+q.date,margin,y);y+=6;doc.setFont('helvetica','bold');doc.text('Total: '+money(q.total),margin,y);y+=10;doc.setFont('helvetica','normal');doc.setFontSize(9);const text=q.details||q.breakdown;doc.splitTextToSize(text,width).forEach(line=>{if(y>280){doc.addPage();y=20}doc.text(line,margin,y);y+=5});doc.save('CWF-quotation-'+q.customer.replace(/[^a-z0-9]+/gi,'-')+'-'+q.date+'.pdf')}
