@@ -208,7 +208,7 @@ function measureRooms(containerId){
 }
 function val(id){return Math.max(0,Number(document.getElementById(id).value)||0)}
 function money(n){return '£'+n.toFixed(2)}
-function saveQuote(key,total,detail,fitting=0){quoteTotals[key]=total;if(key in fittingTotals)fittingTotals[key]=fitting;document.getElementById(key==='vinyl'?'vinylResult':key==='laminate'?'lamResult':key==='lvt'?'lvtResult':'prepResult').innerHTML=detail+'<br><b>Section total: '+money(total)+'</b>';renderQuote()}
+function saveQuote(key,total,detail,fitting=0){quoteTotals[key]=total;if(key in fittingTotals)fittingTotals[key]=fitting;document.getElementById(key==='carpet'?'result':key==='vinyl'?'vinylResult':key==='laminate'?'lamResult':key==='lvt'?'lvtResult':key==='contracts'?'contractResult':key==='tiles'?'tileResult':'prepResult').innerHTML=detail+'<br><b>Section total: '+money(total)+'</b>';renderQuote()}
 function getSavedQuotes(){try{return JSON.parse(localStorage.getItem('cwf_saved_quotes')||'[]')}catch(e){return []}}
 function saveCurrentQuote(){
  try{
@@ -246,7 +246,7 @@ function openQuoteDocument(kind){
   const q=getDiscountedQuote(),fit=q.fitBefore;
   body='<table><thead><tr><th>Description</th><th>Price</th></tr></thead><tbody>'+rows+(fit>0?'<tr><td>Fitting (total)</td><td>£'+fit.toFixed(2)+'</td></tr>':'')+(q.materialDiscount>0?'<tr><td>Materials discount ('+q.materialPct+'%)</td><td>-£'+q.materialDiscount.toFixed(2)+'</td></tr>':'')+(q.fitDiscount>0?'<tr><td>Fitting discount ('+q.fitPct+'%)</td><td>-£'+q.fitDiscount.toFixed(2)+'</td></tr>':'')+'</tbody></table><h2 class="total">Total quotation: £'+total.toFixed(2)+'</h2><p>Thank you for your enquiry.</p>';
  }else{
-  const ids=['result','vinylResult','lamResult','lvtResult','prepResult'];
+  const ids=['result','vinylResult','lamResult','lvtResult','prepResult','contractResult','tileResult'];
   body=ids.map(id=>{const el=document.getElementById(id);return el&&!el.hidden&&el.textContent.trim()?'<section><h2>'+({result:'Carpet cutting plan',vinylResult:'Vinyl cutting plan',lamResult:'Laminate details',lvtResult:'LVT details',prepResult:'Preparation details',contractResult:'Contract flooring details',tileResult:'Carpet tiles details'}[id])+'</h2><pre>'+escapeDoc(el.textContent)+'</pre></section>':''}).join('');
   if(!body.trim()){alert('Calculate your flooring sections first.');return}
   body+='<h2>Job total: £'+total.toFixed(2)+'</h2>';
