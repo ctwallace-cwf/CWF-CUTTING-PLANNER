@@ -12,6 +12,7 @@ nav{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0}nav button{flex:1;min-widt
 <main class="wrap">
 <section class="card"><h2>Job details</h2><div class="grid">
 <div><label>Customer / job name</label><input id="customer" placeholder="Customer name"></div>
+<div><label>Customer email address</label><input id="customerEmail" type="email" placeholder="name@example.com"></div>
 <div><label>Date</label><input id="date" type="date"></div>
 <div><label>Standard doorplates (£5 each)</label><input id="standardPlates" type="number" min="0" step="1" value="0"></div>
 <div><label>Special doorplates (£15 each)</label><input id="specialPlates" type="number" min="0" step="1" value="0"></div>
@@ -251,7 +252,20 @@ function openQuoteDocument(kind){
   if(!body.trim()){alert('Calculate your flooring sections first.');return}
   body+='<h2>Job total: £'+total.toFixed(2)+'</h2>';
  }
- const html='<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>'+ (isCustomer?'Customer quotation':'Fitter cutting plan')+'</title><style>body{font:16px Arial;color:#222;padding:20px;max-width:800px;margin:auto}h1{border-bottom:3px solid #d7b56d;padding-bottom:10px}table{width:100%;border-collapse:collapse}td,th{padding:12px;border-bottom:1px solid #ccc;text-align:left}td:last-child,th:last-child{text-align:right}.total{background:#f5f1e8;padding:16px}pre{white-space:pre-wrap;font:14px Arial;line-height:1.5;border-bottom:1px solid #ddd;padding-bottom:12px}.actions{margin-bottom:20px}@media print{.actions{display:none}body{padding:0}}</style></head><body><div class="actions"><button onclick="window.print()">Print / Save as PDF</button></div><h1>CHRIS WALLACE FLOORING</h1><h2>'+ (isCustomer?'Customer quotation':'Fitter cutting plan')+'</h2><p><b>Customer / Job:</b> '+escapeDoc(customer)+'<br><b>Date:</b> '+escapeDoc(date)+'</p>'+body+'</body></html>';
+ let emailButton='';
+ if(isCustomer){
+  const email=(document.getElementById('customerEmail').value||'').trim();
+  const q=getDiscountedQuote();
+  const emailRows=Object.keys(quoteTotals).filter(k=>quoteTotals[k]>0).map(k=>quoteLabels[k]+': £'+(quoteTotals[k]-fittingTotals[k]).toFixed(2));
+  if(q.fitBefore>0)emailRows.push('Fitting: £'+q.fitBefore.toFixed(2));
+  if(q.materialDiscount>0)emailRows.push('Materials discount: -£'+q.materialDiscount.toFixed(2));
+  if(q.fitDiscount>0)emailRows.push('Fitting discount: -£'+q.fitDiscount.toFixed(2));
+  emailRows.push('TOTAL QUOTATION: £'+total.toFixed(2));
+  const mailSubject=encodeURIComponent('Flooring quotation - '+customer);
+  const mailBody=encodeURIComponent('Hi '+customer+',\n\nPlease find your flooring quotation below.\n\n'+emailRows.join('\n')+'\n\nThank you for your enquiry.\nChris Wallace Flooring');
+  emailButton='<button onclick="window.location.href=\\\'mailto:'+encodeURIComponent(email)+'?subject='+mailSubject+'&body='+mailBody+'\\\'">Email quotation</button>';
+ }
+ const html='<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>'+ (isCustomer?'Customer quotation':'Fitter cutting plan')+'</title><style>body{font:16px Arial;color:#222;padding:20px;max-width:800px;margin:auto}h1{border-bottom:3px solid #d7b56d;padding-bottom:10px}table{width:100%;border-collapse:collapse}td,th{padding:12px;border-bottom:1px solid #ccc;text-align:left}td:last-child,th:last-child{text-align:right}.total{background:#f5f1e8;padding:16px}pre{white-space:pre-wrap;font:14px Arial;line-height:1.5;border-bottom:1px solid #ddd;padding-bottom:12px}.actions{margin-bottom:20px}@media print{.actions{display:none}body{padding:0}}</style></head><body><div class="actions"><button onclick="window.print()">Print / Save as PDF</button>'+emailButton+'</div><h1>CHRIS WALLACE FLOORING</h1><h2>'+ (isCustomer?'Customer quotation':'Fitter cutting plan')+'</h2><p><b>Customer / Job:</b> '+escapeDoc(customer)+'<br><b>Date:</b> '+escapeDoc(date)+'</p>'+body+'</body></html>';
  const blob=new Blob([html],{type:'text/html'}),url=URL.createObjectURL(blob),win=window.open(url,'_blank');
  if(!win)alert('Popup blocked. Allow popups for this website and try again.');
 }function getDiscountedQuote(){const matBefore=Object.values(quoteTotals).reduce((a,b)=>a+b,0)-Object.values(fittingTotals).reduce((a,b)=>a+b,0),fitBefore=Object.values(fittingTotals).reduce((a,b)=>a+b,0),materialPct=Math.min(100,Math.max(0,val("materialsDiscount"))),fitPct=Math.min(100,Math.max(0,val("fittingDiscount"))),materialDiscount=matBefore*materialPct/100,fitDiscount=fitBefore*fitPct/100;return {matBefore,fitBefore,materialPct,fitPct,materialDiscount,fitDiscount,total:matBefore-materialDiscount+fitBefore-fitDiscount}}
