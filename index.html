@@ -151,9 +151,25 @@ document.getElementById('calc').onclick=()=>{
    const area=placed.reduce((sum,r)=>sum+r.w*r.l,0);
    return {roll,valid,placed,shelves,total,supplied,area,waste:Math.max(0,supplied-area)};
  }
- const plans=[makePlan(4),makePlan(5)];
- plans.sort((a,b)=>b.placed.length-a.placed.length||a.total-b.total||a.supplied-b.supplied||a.roll-b.roll);
- const plan=plans[0],roll=plan.roll,shelves=plan.shelves,placed=plan.placed,total=plan.total;
+ const lockBatch=stairsEnabled||wrapStairsEnabled||doubleStairsEnabled;
+ let plan,roll,shelves,placed,total;
+ if(lockBatch){
+  const plans=[makePlan(4),makePlan(5)];
+  plans.sort((a,b)=>b.placed.length-a.placed.length||a.supplied-b.supplied||a.roll-b.roll);
+  plan=plans[0];roll=plan.roll;shelves=plan.shelves;placed=plan.placed;total=plan.total;
+ }else{
+  const mixedShelves=[];const mixedPlaced=[];let mixedSupplied=0,mixedTotal=0;
+  raw.forEach(room=>{
+   let best=null;
+   for(const width of [4,5])for(const o of [{across:room.w,run:room.l,rotated:false},{across:room.l,run:room.w,rotated:true}].filter(o=>o.across<=width+0.00001)){
+    const supplied=width*o.run;
+    if(!best||supplied<best.supplied-0.00001||(Math.abs(supplied-best.supplied)<0.00001&&width<best.width))best={width,o,supplied};
+   }
+   if(best){mixedShelves.push({roll:best.width,height:best.o.run,used:best.o.across,items:[{...room,...best.o}]});mixedPlaced.push({...room,...best.o});mixedSupplied+=best.supplied;mixedTotal+=best.o.run;}
+  });
+  roll='Mixed';shelves=mixedShelves;placed=mixedPlaced;total=mixedTotal;
+  plan={roll,shelves,placed,total,supplied:mixedSupplied,area:mixedPlaced.reduce((s,r)=>s+r.w*r.l,0),waste:Math.max(0,mixedSupplied-mixedPlaced.reduce((s,r)=>s+r.w*r.l,0))};
+ }
  const placedByIndex=new Map(placed.map(r=>[r.index,r]));
  const rows=raw.map(r=>{const p=placedByIndex.get(r.index);return p?{...p,ok:true}:{...r,ok:false}});
  const invalid=rows.filter(r=>!r.ok);
@@ -179,7 +195,7 @@ document.getElementById('calc').onclick=()=>{
  document.getElementById('count').textContent=placed.length+' / '+raw.length;
  document.getElementById('waste').textContent=plan.waste.toFixed(2)+' m²';
  const job=esc(document.getElementById('customer').value||'CWF job'),date=esc(document.getElementById('date').value||'');
- document.getElementById('cuts').innerHTML='<p><b>'+job+'</b> · '+date+' · Recommended '+roll+'m roll</p>'+rows.map((r,i)=>'<div class="line"><b>'+(i+1)+'. '+esc(r.name)+'</b><br>'+(r.ok?r.across.toFixed(2)+'m across × '+r.run.toFixed(2)+'m long'+(r.rotated?' (turned)':'')+' · Cut section '+(shelves.findIndex(s=>s.items.some(x=>x.index===r.index))+1):'<span style="color:#a33">Does not fit either roll width</span>')+'</div>').join('')+'<p><b>Total roll length: '+total.toFixed(2)+' linear metres on a '+roll+'m roll</b></p>'
+ document.getElementById('cuts').innerHTML='<p><b>'+job+'</b> · '+date+' · Recommended '+(roll==='Mixed'?'mixed 4m/5m rolls':roll+'m roll')</p>'+rows.map((r,i)=>'<div class="line"><b>'+(i+1)+'. '+esc(r.name)+'</b><br>'+(r.ok?r.across.toFixed(2)+'m across × '+r.run.toFixed(2)+'m long'+(r.rotated?' (turned)':'')+' · Cut section '+(shelves.findIndex(s=>s.items.some(x=>x.index===r.index))+1):'<span style="color:#a33">Does not fit either roll width</span>')+'</div>').join('')+'<p><b>Total roll length: '+total.toFixed(2)+' linear metres on a '+roll+'m roll</b></p>'
  +'<div class="line">Carpet: '+plan.supplied.toFixed(2)+'m² × £'+price.toFixed(2)+' = <b>£'+carpetCost.toFixed(2)+'</b></div>'
  +(underlayEnabled?'<div class="line">Underlay: '+underlayArea.toFixed(2)+' room m² × £'+underlayPrice.toFixed(2)+' = <b>£'+underlayCost.toFixed(2)+'</b></div>':'<div class="line">Underlay: not selected</div>')
  +'<div class="line">Standard doorplates: '+standardPlates+' × £5 = <b>£'+(standardPlates*5).toFixed(2)+'</b></div>'
@@ -188,7 +204,7 @@ document.getElementById('calc').onclick=()=>{
  +'<h3>Fitting charges</h3>'+roomFitting.map(r=>'<div class="line">'+esc(r.name)+': '+r.area.toFixed(2)+'m² × £5/m² (minimum 12m²) = <b>£'+r.charge.toFixed(2)+'</b></div>').join('')
  +(hallEnabled?'<div class="line">Hall surcharge: <b>£30.00</b></div>':'')+(stairsEnabled?'<div class="line">Stairs and landing: £50 surcharge, fitting total adjusted to minimum £100</div>':'')+(wrapStairsEnabled?'<div class="line">Wrap-round stairs surcharge: <b>£100.00</b></div>':'')+(doubleStairsEnabled?'<div class="line">Double staircase surcharge: <b>£80.00</b></div>':'')
  +'<p><b>Total fitting: £'+fittingCost.toFixed(2)+'</b></p><p><b>Total job including materials and fitting: £'+jobTotal.toFixed(2)+'</b></p>';
- document.getElementById('layout').innerHTML=shelves.map((sh,i)=>'<div class="shelf"><b>Cut section '+(i+1)+' · '+sh.height.toFixed(2)+'m long · '+roll+'m roll width</b><div>'+sh.items.map(p=>'<span class="piece">'+esc(p.name)+'<br>'+p.across.toFixed(2)+'m × '+p.run.toFixed(2)+'m</span>').join('')+'</div><div class="offcut">Unused width in this section: '+Math.max(0,roll-sh.used).toFixed(2)+'m across the full section length</div></div>').join('');
+ document.getElementById('layout').innerHTML=shelves.map((sh,i)=>'<div class="shelf"><b>Cut section '+(i+1)+' · '+sh.height.toFixed(2)+'m long · '+sh.roll+'m roll width</b><div>'+sh.items.map(p=>'<span class="piece">'+esc(p.name)+'<br>'+p.across.toFixed(2)+'m × '+p.run.toFixed(2)+'m</span>').join('')+'</div><div class="offcut">Unused width in this section: '+Math.max(0,sh.roll-sh.used).toFixed(2)+'m across the full section length</div></div>').join('');
  const notice=document.querySelector('.notice');
  notice.textContent=invalid.length?'These rooms do not fit either the 4m or 5m roll in either direction: '+invalid.map(r=>r.name).join(', ')+'. Check measurements or consider a different solution.':'Automatic comparison selected the option that fits the most rooms, then uses the least total carpet area. Check pile direction, pattern repeats, matching, doorway turns and fitting allowances before ordering or cutting.';
 }
