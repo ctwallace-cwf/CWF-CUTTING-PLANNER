@@ -219,7 +219,7 @@ function saveCurrentQuote(){
   const total=getDiscountedQuote().total;
   if(total<=0){alert('Calculate at least one section before saving the quotation.');return}
   const breakdown=document.getElementById('quoteBreakdown').textContent||'';
-  const ids=['result','vinylResult','lamResult','lvtResult','prepResult','contractResult','tileResult'];
+  const ids=['result','vinylResult','lamResult','lvtResult','prepResult','contractResult','tileResult','upliftResult'];
   const details=ids.map(id=>{const el=document.getElementById(id);return el&&!el.hidden?el.textContent.trim():''}).filter(Boolean).join('\\n\\n');
   const address=(document.getElementById('jobAddress').value||'').trim();const q={id:Date.now(),customer,address,date,total,breakdown,details};
   const saved=getSavedQuotes();
@@ -243,12 +243,12 @@ function openQuoteDocument(kind){
  let body='';
  if(isCustomer){
   const ids=['result','vinylResult','lamResult','lvtResult','prepResult','contractResult','tileResult'];
-  const titles={result:'Carpet',vinylResult:'Vinyl',lamResult:'Laminate',lvtResult:'LVT',prepResult:'Floor preparation',contractResult:'Contract flooring',tileResult:'Carpet tiles'};
+  const titles={result:'Carpet',vinylResult:'Vinyl',lamResult:'Laminate',lvtResult:'LVT',prepResult:'Floor preparation',contractResult:'Contract flooring',tileResult:'Carpet tiles',upliftResult:'Uplift / removal'};
   const rows=ids.map(id=>{const el=document.getElementById(id);if(!el||el.hidden||!el.textContent.trim())return '';let html='';if(id==='result'&&window.cwfCarpetQuoteLines){html+=window.cwfCarpetQuoteLines.map(line=>'<tr><td>'+escapeDoc(line.label)+'</td><td>'+escapeDoc(line.amount)+'</td></tr>').join('')}else{html+='<tr><td>'+titles[id]+'</td><td>Included in materials total</td></tr>'}return html}).join('');
   body='<table><thead><tr><th>Materials</th><th>Price</th></tr></thead><tbody>'+rows+'</tbody></table><p><b>Materials total (including VAT):</b> £'+q.materialsGross.toFixed(2)+'</p>'+(q.fitBefore>0?'<p><b>Fitting (separate charge):</b> £'+q.fittingNet.toFixed(2)+'</p>':'')+'<h2 class="total">Total quotation: £'+total.toFixed(2)+'</h2><p><b>Booking deposit required:</b> 25% of materials = £'+(q.materialsGross*0.25).toFixed(2)+'</p><p>Fitting is a separate charge. Balance payable on the day by cash or bank transfer.</p><p>Thank you for your enquiry.</p>';
  }else{
   const ids=['result','vinylResult','lamResult','lvtResult','prepResult','contractResult','tileResult'];
-  body=ids.map(id=>{const el=document.getElementById(id);return el&&!el.hidden&&el.textContent.trim()?'<section><h2>'+({result:'Carpet cutting plan',vinylResult:'Vinyl cutting plan',lamResult:'Laminate details',lvtResult:'LVT details',prepResult:'Preparation details',contractResult:'Contract flooring details',tileResult:'Carpet tiles details'}[id])+'</h2><pre>'+escapeDoc(el.textContent)+'</pre></section>':''}).join('');
+  body=ids.map(id=>{const el=document.getElementById(id);return el&&!el.hidden&&el.textContent.trim()?'<section><h2>'+({result:'Carpet cutting plan',vinylResult:'Vinyl cutting plan',lamResult:'Laminate details',lvtResult:'LVT details',prepResult:'Preparation details',contractResult:'Contract flooring details',tileResult:'Carpet tiles details',upliftResult:'Uplift / removal'}[id])+'</h2><pre>'+escapeDoc(el.textContent)+'</pre></section>':''}).join('');
   if(!body.trim()){alert('Calculate your flooring sections first.');return}
   body+='<h2>Job total (incl. VAT on materials): £'+total.toFixed(2)+'</h2><p>VAT on materials: £'+q.vat.toFixed(2)+' · Fitting is a separate subcontractor charge.</p><p>Payable on the day by cash or bank transfer.</p>';
  }
