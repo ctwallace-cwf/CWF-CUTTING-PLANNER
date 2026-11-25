@@ -32,7 +32,7 @@ nav{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0}nav button{flex:1;min-widt
 <section class="card" id="result" hidden><h2>Cutting plan</h2>
 <div class="stats"><div class="stat"><span class="muted">Linear metres</span><b id="metres">—</b></div><div class="stat"><span class="muted">Carpet supplied (m²)</span><b id="supplied">—</b></div><div class="stat"><span class="muted">Room area (m²)</span><b id="roomarea">—</b></div><div class="stat"><span class="muted">Estimated waste (m²)</span><b id="waste">—</b></div><div class="stat"><span class="muted">Carpet cost</span><b id="cost">—</b></div><div class="stat"><span class="muted">Underlay cost</span><b id="underlayCost">—</b></div><div class="stat"><span class="muted">Doorplates</span><b id="plateCost">—</b></div><div class="stat"><span class="muted">Total job materials</span><b id="grandTotal">—</b></div><div class="stat"><span class="muted">Fitting charge</span><b id="fittingCost">—</b></div><div class="stat"><span class="muted">Total including fitting</span><b id="jobTotal">—</b></div><div class="stat"><span class="muted">Rooms fitting</span><b id="count">—</b></div></div>
 <div id="cuts"></div><h3>Roll layout</h3><div id="layout"></div>
-<p class="notice">This is a first-fit cutting estimate, not a guaranteed nesting solution. Check pile direction, pattern repeats, matching, doorway turns and fitting allowances before ordering or cutting.</p>
+<div id="rollOptimizer" class="card" hidden><h2>🔧 Roll Width Optimiser</h2><p class="muted">Separate comparison only — does not change your original plan or quotation.</p><button type="button" class="gold" id="runOptimizer">Compare roll widths</button><div id="optimizerResults"></div></div><p class="notice">This is a first-fit cutting estimate, not a guaranteed nesting solution. Check pile direction, pattern repeats, matching, doorway turns and fitting allowances before ordering or cutting.</p>
 <div class="no-print"><button type="button" class="gold" onclick="saveSectionPdf('result','CWF Carpet Quotation')">Save carpet sheet as PDF</button><button onclick="window.print()">Print fitter's sheet</button></div>
 </section>
 
@@ -334,5 +334,16 @@ function saveSectionPdf(sectionId,title){
  const date=new Date().toISOString().slice(0,10);doc.save('CWF-'+title.toLowerCase().replace(/[^a-z0-9]+/g,'-')+'-'+date+'.pdf');
 }
 function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+
+// Independent roll optimiser. Does not alter the main calculator.
+document.getElementById('runOptimizer').addEventListener('click',function(){
+ const rooms=[...document.querySelectorAll('#rooms .room')].map(r=>({name:r.querySelector('.name').value||'Room',w:Number(r.querySelector('.w').value),l:Number(r.querySelector('.l').value)})).filter(r=>r.w>0&&r.l>0);
+ const out=document.getElementById('optimizerResults');if(!rooms.length){out.innerHTML='<p>Enter room measurements first.</p>';return}
+ const locked=document.getElementById('stairsEnabled').checked||document.getElementById('wrapStairsEnabled').checked||document.getElementById('doubleStairsEnabled').checked;const price=Number(document.getElementById('price').value)||0;
+ let chosenRoll=null;if(locked){const sums=[4,5].map(roll=>({roll,total:rooms.reduce((s,r)=>s+((Math.min(r.w,r.l)<=roll)?roll*Math.max(r.w,r.l):999999),0)})).sort((a,b)=>a.total-b.total);chosenRoll=sums[0].roll}
+ const rows=rooms.map(r=>{let opts=[];[4,5].filter(x=>!locked||x===chosenRoll).forEach(roll=>[{across:r.w,run:r.l},{across:r.l,run:r.w}].forEach(o=>{if(o.across<=roll+0.00001)opts.push({roll,run:o.run,across:o.across,sup:roll*o.run})}));opts.sort((a,b)=>a.sup-b.sup||a.roll-b.roll);return opts.length?{name:r.name,...opts[0]}:{name:r.name,error:'Does not fit available roll widths'}});
+ const supplied=rows.reduce((s,r)=>s+(r.sup||0),0);out.innerHTML='<div class="card"><b>'+(locked?'Stairs selected: same roll width recommended':'Each room optimised separately')+'</b>'+rows.map(r=>r.error?'<p>'+r.name+': '+r.error+'</p>':'<p><b>'+r.name+'</b>: '+r.roll+'m roll · '+r.run.toFixed(2)+'m length · '+r.sup.toFixed(2)+'m² supplied</p>').join('')+'<hr><b>Total supplied: '+supplied.toFixed(2)+'m²</b><p>Estimated carpet cost: £'+(supplied*price).toFixed(2)+'</p><small>Comparison only. Check pattern, pile direction and allowances before ordering.</small></div>';
+});
+document.getElementById('rollOptimizer').hidden=false;
 </script>
 </body></html>
