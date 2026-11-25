@@ -12,6 +12,7 @@ nav{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0}nav button{flex:1;min-widt
 <main class="wrap">
 <section class="card"><h2>Job details</h2><div class="grid">
 <div><label>Customer / job name</label><input id="customer" placeholder="Customer name"></div>
+<div><label>Job address</label><input id="jobAddress" placeholder="Property address"></div>
 <div><label>Customer email address</label><input id="customerEmail" type="email" placeholder="name@example.com"></div>
 <div><label>Date</label><input id="date" type="date"></div>
 <div><label>Standard doorplates (£5 each)</label><input id="standardPlates" type="number" min="0" step="1" value="0"></div>
@@ -220,7 +221,7 @@ function saveCurrentQuote(){
   const breakdown=document.getElementById('quoteBreakdown').textContent||'';
   const ids=['result','vinylResult','lamResult','lvtResult','prepResult','contractResult','tileResult'];
   const details=ids.map(id=>{const el=document.getElementById(id);return el&&!el.hidden?el.textContent.trim():''}).filter(Boolean).join('\\n\\n');
-  const q={id:Date.now(),customer,date,total,breakdown,details};
+  const address=(document.getElementById('jobAddress').value||'').trim();const q={id:Date.now(),customer,address,date,total,breakdown,details};
   const saved=getSavedQuotes();
   saved.unshift(q);
   localStorage.setItem('cwf_saved_quotes',JSON.stringify(saved));
@@ -230,14 +231,15 @@ function saveCurrentQuote(){
   alert('The quotation could not be saved. Error: '+(error&&error.message?error.message:'Unknown error')+'\\n\\nTry opening the app directly in Safari.');
  }
 }
-function renderSavedQuotes(){const list=document.getElementById('savedQuotes');if(!list)return;const saved=getSavedQuotes();if(!saved.length){list.innerHTML='<p class="muted">No quotations saved on this device yet.</p>';return}list.innerHTML=saved.map(q=>'<div class="line"><b>'+esc(q.customer)+'</b> · '+esc(q.date)+' · <b>'+money(q.total)+'</b><br><button type="button" class="gold" onclick="downloadSavedQuote('+q.id+')">PDF</button><button type="button" class="remove" onclick="deleteSavedQuote('+q.id+')">Delete</button></div>').join('')}
+function renderSavedQuotes(){const list=document.getElementById('savedQuotes');if(!list)return;const saved=getSavedQuotes();if(!saved.length){list.innerHTML='<p class="muted">No quotations saved on this device yet.</p>';return}list.innerHTML=saved.map(q=>'<div class="line"><b>'+esc(q.customer)+'</b>'+ (q.address?'<br>'+esc(q.address):'') +' · '+esc(q.date)+' · <b>'+money(q.total)+'</b><br><button type="button" class="gold" onclick="downloadSavedQuote('+q.id+')">PDF</button><button type="button" class="remove" onclick="deleteSavedQuote('+q.id+')">Delete</button></div>').join('')}
 function deleteSavedQuote(id){if(!confirm('Delete this saved quotation?'))return;localStorage.setItem('cwf_saved_quotes',JSON.stringify(getSavedQuotes().filter(q=>q.id!==id)));renderSavedQuotes()}
-function downloadSavedQuote(id){const q=getSavedQuotes().find(x=>x.id===id);if(!q)return;if(!window.jspdf||!window.jspdf.jsPDF){alert('PDF tool is still loading. Please try again.');return}const doc=new window.jspdf.jsPDF({unit:'mm',format:'a4'}),margin=15,width=180,yStart=20;let y=yStart;doc.setFont('helvetica','bold');doc.setFontSize(18);doc.text('CHRIS WALLACE FLOORING',margin,y);y+=9;doc.setFontSize(14);doc.text('Saved quotation',margin,y);y+=8;doc.setFont('helvetica','normal');doc.setFontSize(11);doc.text('Customer: '+q.customer,margin,y);y+=6;doc.text('Date: '+q.date,margin,y);y+=6;doc.setFont('helvetica','bold');doc.text('Total: '+money(q.total),margin,y);y+=10;doc.setFont('helvetica','normal');doc.setFontSize(9);const text=q.details||q.breakdown;doc.splitTextToSize(text,width).forEach(line=>{if(y>280){doc.addPage();y=20}doc.text(line,margin,y);y+=5});doc.save('CWF-quotation-'+q.customer.replace(/[^a-z0-9]+/gi,'-')+'-'+q.date+'.pdf')}
+function downloadSavedQuote(id){const q=getSavedQuotes().find(x=>x.id===id);if(!q)return;if(!window.jspdf||!window.jspdf.jsPDF){alert('PDF tool is still loading. Please try again.');return}const doc=new window.jspdf.jsPDF({unit:'mm',format:'a4'}),margin=15,width=180,yStart=20;let y=yStart;doc.setFont('helvetica','bold');doc.setFontSize(18);doc.text('CHRIS WALLACE FLOORING',margin,y);y+=9;doc.setFontSize(14);doc.text('Saved quotation',margin,y);y+=8;doc.setFont('helvetica','normal');doc.setFontSize(11);doc.text('Customer: '+q.customer,margin,y);y+=6;if(q.address){doc.text('Address: '+q.address,margin,y);y+=6}doc.text('Date: '+q.date,margin,y);y+=6;doc.setFont('helvetica','bold');doc.text('Total: '+money(q.total),margin,y);y+=10;doc.setFont('helvetica','normal');doc.setFontSize(9);const text=q.details||q.breakdown;doc.splitTextToSize(text,width).forEach(line=>{if(y>280){doc.addPage();y=20}doc.text(line,margin,y);y+=5});doc.save('CWF-quotation-'+q.customer.replace(/[^a-z0-9]+/gi,'-')+'-'+q.date+'.pdf')}
 function escapeDoc(s){return String(s).replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]))}
 function openCustomerQuote(){openQuoteDocument('customer')}
 function openFitterPlan(){openQuoteDocument('fitter')}
 function openQuoteDocument(kind){
  const customer=(document.getElementById('customer').value||'Customer').trim();
+ const address=(document.getElementById('jobAddress').value||'').trim();
  const date=document.getElementById('date').value||new Date().toISOString().slice(0,10);
  const isCustomer=kind==='customer',total=getDiscountedQuote().total;
  if(total<=0){alert('Calculate at least one section before creating a document.');return}
@@ -262,7 +264,7 @@ function openQuoteDocument(kind){
   if(q.fitDiscount>0)emailRows.push('Fitting discount: -£'+q.fitDiscount.toFixed(2));
   emailRows.push('TOTAL QUOTATION: £'+total.toFixed(2));
   const mailSubject=encodeURIComponent('Flooring quotation - '+customer);
-  const mailBody=encodeURIComponent('Hi '+customer+',\n\nPlease find your flooring quotation below.\n\n'+emailRows.join('\n')+'\n\nThank you for your enquiry.\nChris Wallace Flooring');
+  const mailBody=encodeURIComponent('Hi '+customer+',\n'+(address?'\nJob address: '+address+'\n':'\n')+'\nPlease find your flooring quotation below.\n\n'+emailRows.join('\n')+'\n\nThank you for your enquiry.\nChris Wallace Flooring');
   emailButton='<a class="emailButton" href="mailto:'+encodeURIComponent(email)+'?subject='+mailSubject+'&body='+mailBody+'">Email quotation</a>';
  }
  const html='<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>'+ (isCustomer?'Customer quotation':'Fitter cutting plan')+'</title><style>body{font:16px Arial;color:#222;padding:20px;max-width:800px;margin:auto}h1{border-bottom:3px solid #d7b56d;padding-bottom:10px}table{width:100%;border-collapse:collapse}td,th{padding:12px;border-bottom:1px solid #ccc;text-align:left}td:last-child,th:last-child{text-align:right}.total{background:#f5f1e8;padding:16px}pre{white-space:pre-wrap;font:14px Arial;line-height:1.5;border-bottom:1px solid #ddd;padding-bottom:12px}.actions{margin-bottom:20px}.emailButton{display:inline-block;padding:10px 14px;margin:4px;background:#d7b56d;color:#171717;font-weight:bold;border-radius:6px;text-decoration:none}@media print{.actions{display:none}body{padding:0}}</style></head><body><div class="actions"><button onclick="window.print()">Print / Save as PDF</button>'+emailButton+'</div><h1>CHRIS WALLACE FLOORING</h1><h2>'+ (isCustomer?'Customer quotation':'Fitter cutting plan')+'</h2><p><b>Customer / Job:</b> '+escapeDoc(customer)+'<br><b>Date:</b> '+escapeDoc(date)+'</p>'+body+'</body></html>';
