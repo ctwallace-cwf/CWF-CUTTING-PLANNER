@@ -13,17 +13,19 @@ nav{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0}nav button{flex:1;min-widt
 <section class="card"><h2>Job details</h2><div class="grid">
 <div><label>Customer / job name</label><input id="customer" placeholder="Customer name"></div>
 <div><label>Date</label><input id="date" type="date"></div>
-<div><label>Roll width selection</label><input value="Automatic (4m or 5m)" disabled></div>
-<div><label>Carpet price per m² (£)</label><input id="price" type="number" min="0" step=".01" placeholder="0.00"></div>
-<div><label>Underlay price per room m² (£)</label><input id="underlayPrice" type="number" min="0" step=".01" placeholder="0.00"></div>
-<div><label>Include underlay?</label><label style="display:flex;align-items:center;gap:8px;font-size:15px"><input id="underlayEnabled" type="checkbox" style="width:auto"> Yes, add underlay</label></div>
 <div><label>Standard doorplates (£5 each)</label><input id="standardPlates" type="number" min="0" step="1" value="0"></div>
 <div><label>Special doorplates (£15 each)</label><input id="specialPlates" type="number" min="0" step="1" value="0"></div>
-<div><label>Fitting charge (automatically included)</label><div style="padding:12px;border:1px solid #ddd;border-radius:8px;background:#f4f1e9">£5 per room m² · £60 minimum per room (12m²)</div></div>
-<div><label>Stairs and landing</label><label style="display:flex;align-items:center;gap:8px;font-size:15px"><input id="stairsEnabled" type="checkbox" style="width:auto"> Add £60 stairs and landing surcharge</label></div>
 </div></section>
 <nav class="no-print" id="pageNav"><button type="button" onclick="showPage('carpet')">Carpet</button><button type="button" onclick="showPage('vinyl')">Vinyl</button><button type="button" onclick="showPage('laminate')">Laminate</button><button type="button" onclick="showPage('lvt')">LVT</button><button type="button" onclick="showPage('prep')">Screed / DPM / Glue</button><button type="button" onclick="showPage('quote')">Final total</button></nav>
 <div id="page-carpet" class="page">
+<section class="card"><h2>Carpet selection</h2><div class="grid"><div><label>Roll width selection</label><input value="Automatic (4m or 5m)" disabled></div>
+<div><label>Carpet price per m² (£)</label><input id="price" type="number" min="0" step=".01" placeholder="0.00"></div>
+<div><label>Underlay price per room m² (£)</label><input id="underlayPrice" type="number" min="0" step=".01" placeholder="0.00"></div>
+<div><label>Include underlay?</label><label style="display:flex;align-items:center;gap:8px;font-size:15px"><input id="underlayEnabled" type="checkbox" style="width:auto"> Yes, add underlay</label></div>
+</div></section>
+<section class="card"><h2>Carpet fitting</h2><div class="grid"><div><label>Fitting charge (automatically included)</label><div style="padding:12px;border:1px solid #ddd;border-radius:8px;background:#f4f1e9">£5 per room m² · £60 minimum per room (12m²)</div></div>
+<div><label>Stairs and landing</label><label style="display:flex;align-items:center;gap:8px;font-size:15px"><input id="stairsEnabled" type="checkbox" style="width:auto"> Add £60 stairs and landing surcharge</label></div>
+</div></section>
 <section class="card"><h2>Room measurements</h2><p class="muted">Enter the finished room width and length in metres. The planner tries both directions and groups rooms together where they fit across the roll.</p><div id="rooms"></div><div class="no-print"><button class="gold" id="add">+ Add room</button><button id="calc">Calculate cutting plan</button></div></section>
 <section class="card" id="result" hidden><h2>Cutting plan</h2>
 <div class="stats"><div class="stat"><span class="muted">Linear metres</span><b id="metres">—</b></div><div class="stat"><span class="muted">Carpet supplied (m²)</span><b id="supplied">—</b></div><div class="stat"><span class="muted">Room area (m²)</span><b id="roomarea">—</b></div><div class="stat"><span class="muted">Estimated waste (m²)</span><b id="waste">—</b></div><div class="stat"><span class="muted">Carpet cost</span><b id="cost">—</b></div><div class="stat"><span class="muted">Underlay cost</span><b id="underlayCost">—</b></div><div class="stat"><span class="muted">Doorplates</span><b id="plateCost">—</b></div><div class="stat"><span class="muted">Total job materials</span><b id="grandTotal">—</b></div><div class="stat"><span class="muted">Fitting charge</span><b id="fittingCost">—</b></div><div class="stat"><span class="muted">Total including fitting</span><b id="jobTotal">—</b></div><div class="stat"><span class="muted">Rooms fitting</span><b id="count">—</b></div></div>
