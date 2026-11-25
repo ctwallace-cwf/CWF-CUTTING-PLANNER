@@ -189,7 +189,8 @@ document.getElementById('calc').onclick=()=>{
  notice.textContent=invalid.length?'These rooms do not fit either the 4m or 5m roll in either direction: '+invalid.map(r=>r.name).join(', ')+'. Check measurements or consider a different solution.':'Automatic comparison selected the option that fits the most rooms, then uses the least total carpet area. Check pile direction, pattern repeats, matching, doorway turns and fitting allowances before ordering or cutting.';
 }
 
-const quoteTotals={carpet:0,vinyl:0,laminate:0,lvt:0,prep:0};\nconst fittingTotals={carpet:0,vinyl:0,laminate:0,lvt:0};
+const quoteTotals={carpet:0,vinyl:0,laminate:0,lvt:0,prep:0};
+const fittingTotals={carpet:0,vinyl:0,laminate:0,lvt:0};
 const quoteLabels={carpet:'Carpet',vinyl:'Vinyl',laminate:'Laminate',lvt:'LVT',prep:'Screed / DPM / Glue'};
 function showPage(name){document.querySelectorAll('.page').forEach(p=>p.hidden=true);document.getElementById('page-'+name).hidden=false;document.getElementById('pageNav').querySelectorAll('button').forEach(b=>b.style.background=b.textContent.toLowerCase().includes(name==='prep'?'screed':name)?'#d7b56d':'#171717');if(name==='quote')renderQuote();window.scrollTo(0,0)}
 function addMeasureRoom(containerId){
