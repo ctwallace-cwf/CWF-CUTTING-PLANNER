@@ -90,6 +90,7 @@ function addRoom(){
  });
 }
 addRoom();document.getElementById('add').onclick=addRoom;document.getElementById('date').value=new Date().toISOString().slice(0,10);
+['standardPlates','specialPlates'].forEach(id=>document.getElementById(id).addEventListener('input',()=>{if(!document.getElementById('result').hidden)document.getElementById('calc').click()}));
 document.getElementById('calc').onclick=()=>{
  const price=Number(document.getElementById('price').value)||0;
  const underlayEnabled=document.getElementById('underlayEnabled').checked;
