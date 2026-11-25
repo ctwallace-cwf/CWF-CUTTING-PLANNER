@@ -90,7 +90,7 @@ function addRoom(){
  });
 }
 addRoom();document.getElementById('add').onclick=addRoom;document.getElementById('date').value=new Date().toISOString().slice(0,10);
-['standardPlates','specialPlates'].forEach(id=>document.getElementById(id).addEventListener('input',()=>{if(!document.getElementById('result').hidden)document.getElementById('calc').click()}));
+['standardPlates','specialPlates'].forEach(id=>document.getElementById(id).addEventListener('input',()=>{const s=Math.max(0,Math.floor(Number(document.getElementById('standardPlates').value)||0)),p=Math.max(0,Math.floor(Number(document.getElementById('specialPlates').value)||0)),plates=s*5+p*15;document.getElementById('plateCost').textContent='£'+plates.toFixed(2);if(document.getElementById('result').hidden){quoteTotals.carpet=plates;fittingTotals.carpet=0;window.cwfCarpetQuoteLines=[];if(s)window.cwfCarpetQuoteLines.push({label:'Standard doorplates ('+s+')',amount:'£'+(s*5).toFixed(2)});if(p)window.cwfCarpetQuoteLines.push({label:'Special doorplates ('+p+')',amount:'£'+(p*15).toFixed(2)});renderQuote();}else{document.getElementById('calc').click();}}));
 document.getElementById('calc').onclick=()=>{
  const price=Number(document.getElementById('price').value)||0;
  const underlayEnabled=document.getElementById('underlayEnabled').checked;
