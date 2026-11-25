@@ -169,7 +169,7 @@ document.getElementById('calc').onclick=()=>{
  const roomFitting=raw.map(r=>({name:r.name,area:r.w*r.l,charge:Math.max(60,r.w*r.l*5)}));
  const baseRoomFitting=roomFitting.reduce((sum,r)=>sum+r.charge,0); const fittingCost=baseRoomFitting+(hallEnabled?30:0)+(wrapStairsEnabled?100:0)+(doubleStairsEnabled?80:0)+(stairsEnabled?Math.max(50,100-baseRoomFitting):0);
  const jobTotal=grandTotal+fittingCost;
- quoteTotals.carpet=jobTotal; fittingTotals.carpet=fittingCost;
+ quoteTotals.carpet=jobTotal; fittingTotals.carpet=fittingCost; window.cwfCarpetQuoteLines=[{label:'Carpet',amount:'£'+carpetCost.toFixed(2)}]; if(underlayEnabled)window.cwfCarpetQuoteLines.push({label:'Underlay',amount:'£'+underlayCost.toFixed(2)}); if(standardPlates)window.cwfCarpetQuoteLines.push({label:'Standard doorplates ('+standardPlates+')',amount:'£'+(standardPlates*5).toFixed(2)}); if(specialPlates)window.cwfCarpetQuoteLines.push({label:'Special doorplates ('+specialPlates+')',amount:'£'+(specialPlates*15).toFixed(2)});
  document.getElementById('cost').textContent='£'+carpetCost.toFixed(2);
  document.getElementById('underlayCost').textContent='£'+underlayCost.toFixed(2);
  document.getElementById('plateCost').textContent='£'+plateCost.toFixed(2);
@@ -244,7 +244,7 @@ function openQuoteDocument(kind){
  if(isCustomer){
   const ids=['result','vinylResult','lamResult','lvtResult','prepResult','contractResult','tileResult'];
   const titles={result:'Carpet',vinylResult:'Vinyl',lamResult:'Laminate',lvtResult:'LVT',prepResult:'Floor preparation',contractResult:'Contract flooring',tileResult:'Carpet tiles'};
-  const rows=ids.map(id=>{const el=document.getElementById(id);if(!el||el.hidden||!el.textContent.trim())return '';let html='<tr class="section"><td colspan="2"><b>'+titles[id]+'</b></td></tr>';if(id==='result'&&window.cwfCarpetQuoteLines){html+=window.cwfCarpetQuoteLines.map(line=>'<tr><td>'+escapeDoc(line.label)+'</td><td>'+escapeDoc(line.amount)+'</td></tr>').join('')}else{html+='<tr><td>'+titles[id]+' materials</td><td></td></tr>'}return html}).join('');
+  const rows=ids.map(id=>{const el=document.getElementById(id);if(!el||el.hidden||!el.textContent.trim())return '';let html='';if(id==='result'&&window.cwfCarpetQuoteLines){html+=window.cwfCarpetQuoteLines.map(line=>'<tr><td>'+escapeDoc(line.label)+'</td><td>'+escapeDoc(line.amount)+'</td></tr>').join('')}else{html+='<tr><td>'+titles[id]+'</td><td>Included in materials total</td></tr>'}return html}).join('');
   body='<table><thead><tr><th>Materials</th><th>Price</th></tr></thead><tbody>'+rows+'</tbody></table><p><b>Materials total (including VAT):</b> £'+q.materialsGross.toFixed(2)+'</p>'+(q.fitBefore>0?'<p><b>Fitting (separate charge):</b> £'+q.fittingNet.toFixed(2)+'</p>':'')+'<h2 class="total">Total quotation: £'+total.toFixed(2)+'</h2><p><b>Booking deposit required:</b> 25% of materials = £'+(q.materialsGross*0.25).toFixed(2)+'</p><p>Fitting is a separate charge. Balance payable on the day by cash or bank transfer.</p><p>Thank you for your enquiry.</p>';
  }else{
   const ids=['result','vinylResult','lamResult','lvtResult','prepResult','contractResult','tileResult'];
