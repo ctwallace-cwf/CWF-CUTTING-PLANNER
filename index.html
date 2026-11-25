@@ -243,8 +243,8 @@ function openQuoteDocument(kind){
  let body='';
  if(isCustomer){
   const rows=Object.keys(quoteTotals).filter(k=>quoteTotals[k]>0).map(k=>'<tr><td>'+quoteLabels[k]+'</td><td>£'+(quoteTotals[k]-fittingTotals[k]).toFixed(2)+'</td></tr>').join('');
-  const fit=Object.values(fittingTotals).reduce((a,b)=>a+b,0);
-  body='<table><thead><tr><th>Description</th><th>Price</th></tr></thead><tbody>'+rows+(fit>0?'<tr><td>Fitting (total)</td><td>£'+fit.toFixed(2)+'</td></tr>':'')+'</tbody></table><h2 class="total">Total quotation: £'+total.toFixed(2)+'</h2><p>Thank you for your enquiry.</p>';
+  const q=getDiscountedQuote(),fit=q.fitBefore;
+  body='<table><thead><tr><th>Description</th><th>Price</th></tr></thead><tbody>'+rows+(fit>0?'<tr><td>Fitting (total)</td><td>£'+fit.toFixed(2)+'</td></tr>':'')+(q.materialDiscount>0?'<tr><td>Materials discount ('+q.materialPct+'%)</td><td>-£'+q.materialDiscount.toFixed(2)+'</td></tr>':'')+(q.fitDiscount>0?'<tr><td>Fitting discount ('+q.fitPct+'%)</td><td>-£'+q.fitDiscount.toFixed(2)+'</td></tr>':'')+'</tbody></table><h2 class="total">Total quotation: £'+total.toFixed(2)+'</h2><p>Thank you for your enquiry.</p>';
  }else{
   const ids=['result','vinylResult','lamResult','lvtResult','prepResult'];
   body=ids.map(id=>{const el=document.getElementById(id);return el&&!el.hidden&&el.textContent.trim()?'<section><h2>'+({result:'Carpet cutting plan',vinylResult:'Vinyl cutting plan',lamResult:'Laminate details',lvtResult:'LVT details',prepResult:'Preparation details'}[id])+'</h2><pre>'+escapeDoc(el.textContent)+'</pre></section>':''}).join('');
