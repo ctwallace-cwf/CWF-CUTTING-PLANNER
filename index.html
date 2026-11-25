@@ -74,6 +74,10 @@ nav{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0}nav button{flex:1;min-widt
 </main>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.2/jspdf.umd.min.js"></script>
 <script>
+window.addEventListener('error',function(e){var b=document.getElementById('debugBanner')||document.createElement('div');b.id='debugBanner';b.style='position:fixed;z-index:999999;top:0;left:0;right:0;background:#b00020;color:white;padding:12px;font:bold 14px Arial';b.textContent='APP ERROR: '+(e.message||'Unknown error')+' · line '+(e.lineno||'?');document.body.appendChild(b);});
+document.addEventListener('click',function(e){var el=e.target.closest('button');if(el){var b=document.getElementById('debugBanner')||document.createElement('div');b.id='debugBanner';b.style='position:fixed;z-index:999999;top:0;left:0;right:0;background:#176b36;color:white;padding:12px;font:bold 14px Arial';b.textContent='BUTTON TAP REGISTERED: '+(el.textContent.trim()||el.id);document.body.appendChild(b);}});
+</script>
+<script>
 const list=document.getElementById('rooms');
 let roomFieldCounter=0;
 function addRoom(){
