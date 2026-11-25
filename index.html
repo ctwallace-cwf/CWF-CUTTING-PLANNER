@@ -196,13 +196,6 @@ document.getElementById('calc').onclick=()=>{
 const quoteTotals={carpet:0,vinyl:0,laminate:0,lvt:0,prep:0};
 const fittingTotals={carpet:0,vinyl:0,laminate:0,lvt:0};
 const quoteLabels={carpet:'Carpet',vinyl:'Vinyl',laminate:'Laminate',lvt:'LVT',prep:'Screed / DPM / Glue'};
-// Navigation recovery: bind the page buttons reliably
-document.querySelectorAll('#pageNav button').forEach((button)=>{
- const label=button.textContent.trim().toLowerCase();
- const map=[['carpet','carpet'],['vinyl','vinyl'],['laminate','laminate'],['lvt','lvt'],['screed / dpm / glue','prep'],['contract flooring','contracts'],['carpet tiles','tiles'],['uplift','uplift']];
- const match=map.find(([text])=>label.includes(text));
- if(match){button.onclick=function(){showPage(match[1]);};}
-});
 function showPage(name){document.querySelectorAll('.page').forEach(p=>p.hidden=true);document.getElementById('page-'+name).hidden=false;document.getElementById('pageNav').querySelectorAll('button').forEach(b=>b.style.background=b.textContent.toLowerCase().includes(name==='prep'?'screed':name)?'#d7b56d':'#171717');if(name==='quote')renderQuote();window.scrollTo(0,0)}
 function addMeasureRoom(containerId){
  const list=document.getElementById(containerId);
