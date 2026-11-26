@@ -100,7 +100,7 @@ document.getElementById('calc').onclick=()=>{
  const standardPlates=Math.max(0,Math.floor(Number(document.getElementById('standardPlates').value)||0));
  const specialPlates=Math.max(0,Math.floor(Number(document.getElementById('specialPlates').value)||0));
  const stairsEnabled=document.getElementById('stairsEnabled').checked, hallEnabled=document.getElementById('hallEnabled').checked, wrapStairsEnabled=document.getElementById('wrapStairsEnabled').checked, doubleStairsEnabled=document.getElementById('doubleStairsEnabled').checked;
- const raw=[...list.querySelectorAll('.room')].map((r,i)=>{const name=r.querySelector('.name').value.trim()||'Room '+(i+1);const fixed=r.dataset.cwfFixedPile==='true'||/\b(Landing|Stair|Bullnose|Winder)\b/i.test(name);return {name,w:Number(r.querySelector('.w').value),l:Number(r.querySelector('.l').value),index:i,fixedPile:fixed,kind:r.dataset.cwfKind||''};}).filter(r=>r.w>0&&r.l>0);
+ const raw=[...list.querySelectorAll('.room')].map((r,i)=>{const name=r.querySelector('.name').value.trim()||'Room '+(i+1);const fixed=r.dataset.cwfFixedPile==='true'||/\b(Landing|Stair|Bullnose|Winder)\b/i.test(name);return {name,w:Number(r.querySelector('.w').value),l:Number(r.querySelector('.l').value),index:i,fixedPile:fixed,kind:r.dataset.cwfKind||'',shape:r.dataset.cwfShape?JSON.parse(r.dataset.cwfShape):null,area:Number(r.dataset.cwfArea)||0};}).filter(r=>r.w>0&&r.l>0);
  if(!raw.length){alert('Enter at least one room with valid measurements.');return}
  function makePlan(roll){
    const valid=raw.filter(r=>Math.min(r.w,r.l)<=roll+0.00001);
@@ -503,7 +503,7 @@ drawExport.onclick=()=>{
  const q=Math.max(0,Math.floor(Number(document.getElementById('stairQty').value)||0)),sw=Number(document.getElementById('stairWidth').value)||0,sl=Number(document.getElementById('stairLength').value)||0;
  if(q>0&&(!sw||!sl)){alert('Enter stair width and cut length before importing.');return;}
  // Combine groups of five stairs into continuous pile-direction strips. This lets strips sit beside a landing rather than wasting a separate roll section for every tread.
- for(let start=0;start<q;start+=6){const count=Math.min(6,q-start);if(count===6)cutItems.push({name:'Stairs '+(start+1)+'-'+(start+count)+' (6 stair strip)',w:sw,l:sl*count,kind:'Stair strip',fixedPile:true,stairCount:count});else for(let n=0;n<count;n++)cutItems.push({name:'Stair '+(start+n+1),w:sw,l:sl,kind:'Standard stair',fixedPile:true});}
+ for(let n=0;n<q;n++)cutItems.push({name:'Stair '+(n+1),w:sw,l:sl,kind:'Standard stair',fixedPile:true,stairCount:1});
  const bull=document.getElementById('bullnoseEnabled').checked,bq=bull?Math.max(0,Math.floor(Number(document.getElementById('bullnoseQty').value)||0)):0,bw=Number(document.getElementById('bullnoseWidth').value)||0,bl=Number(document.getElementById('bullnoseLength').value)||0;
  if(bq>0&&(!bw||!bl)){alert('Enter bullnose width and cut length before importing.');return;}
  for(let i=0;i<bq;i++)cutItems.push({name:'Bullnose '+(i+1),w:bw,l:bl,kind:'Bullnose',fixedPile:true});
@@ -512,7 +512,7 @@ drawExport.onclick=()=>{
  saved.filter(r=>/odd-shaped piece/i.test(r.kind||r.name)).forEach(r=>cutItems.push({name:r.name,w:Number(r.w),l:Number(r.l),kind:r.kind||'Odd-shaped piece',fixedPile:false}));
  if(!cutItems.length){alert('Add and save at least one room or enter stair measurements.');return;}
  rooms.innerHTML='';
- cutItems.forEach(item=>{addRoom();const row=rooms.lastElementChild;if(!row)return;row.querySelector('.name').value=item.name;row.querySelector('.w').value=Number(item.w).toFixed(2);row.querySelector('.l').value=Number(item.l).toFixed(2);row.dataset.cwfFixedPile=item.fixedPile?'true':'false';row.dataset.cwfKind=item.kind||'';row.querySelectorAll('input').forEach(x=>x.removeAttribute('readonly'));});
+ cutItems.forEach(item=>{addRoom();const row=rooms.lastElementChild;if(!row)return;row.querySelector('.name').value=item.name;row.querySelector('.w').value=Number(item.w).toFixed(2);row.querySelector('.l').value=Number(item.l).toFixed(2);row.dataset.cwfFixedPile=item.fixedPile?'true':'false';row.dataset.cwfKind=item.kind||'';if(item.shape)row.dataset.cwfShape=JSON.stringify(item.shape);if(item.area)row.dataset.cwfArea=String(item.area);row.querySelectorAll('input').forEach(x=>x.removeAttribute('readonly'));});
  showPage('carpet');const result=document.getElementById('result');result.hidden=false;document.getElementById('calc').click();setTimeout(()=>{result.scrollIntoView({behavior:'smooth',block:'start'});},250);
  alert('Imported '+cutItems.length+' pieces into the cutting planner, including '+(q+bq+document.querySelectorAll('#winderRows .drawRoom').length+document.querySelectorAll('#landingRows .drawRoom').length)+' stair/landing entries.');
 };drawPrint.onclick=()=>{if(!saved.length){alert('Save rooms first');return;}let win=window.open('','_blank');if(!win)return;win.document.write('<h1>Site measurements</h1><table border=1 cellpadding=8><tr><th>Room</th><th>Width</th><th>Length</th><th>Area</th></tr>'+saved.map(r=>'<tr><td>'+esc(r.name)+'</td><td>'+r.w.toFixed(2)+'</td><td>'+r.l.toFixed(2)+'</td><td>'+(Number(r.area)||r.w*r.l).toFixed(2)+'</td></tr>').join('')+'</table>');win.document.close();win.print()};
