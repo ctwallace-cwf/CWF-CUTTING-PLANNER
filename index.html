@@ -543,7 +543,7 @@ drawExport.onclick=()=>{
  // Orient the landing so the pile runs along the 2.5m direction: 2.0m across the roll, 2.5m length.
  cutItems.push({name:r.name+' (single shaped piece)',w:Number(r.w),l:Number(r.l),kind:'Irregular shaped piece',fixedPile:true,shape:r.shape,area:Number(r.area)||polygonArea(r.shape)});
 }
-  else cutItems.push({name:r.name,w:Number(r.w),l:Number(r.l),kind:r.kind||'Room'});
+  else cutItems.push({name:r.name,w:Number(r.w),l:Number(r.l),kind:r.kind||'Room',fixedPile:true});
  });
  // Standard stairs: import directly from the form, even if Add stairs to site plan wasn't pressed.
  const q=Math.max(0,Math.floor(Number(document.getElementById('stairQty').value)||0)),sw=Number(document.getElementById('stairWidth').value)||0,sl=Number(document.getElementById('stairLength').value)||0;
