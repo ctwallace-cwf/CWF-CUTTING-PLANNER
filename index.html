@@ -98,7 +98,7 @@ document.getElementById('calc').onclick=()=>{
  const standardPlates=Math.max(0,Math.floor(Number(document.getElementById('standardPlates').value)||0));
  const specialPlates=Math.max(0,Math.floor(Number(document.getElementById('specialPlates').value)||0));
  const stairsEnabled=document.getElementById('stairsEnabled').checked, hallEnabled=document.getElementById('hallEnabled').checked, wrapStairsEnabled=document.getElementById('wrapStairsEnabled').checked, doubleStairsEnabled=document.getElementById('doubleStairsEnabled').checked;
- const raw=[...list.querySelectorAll('.room')].map((r,i)=>{const name=r.querySelector('.name').value.trim()||'Room '+(i+1);const fixed=/\b(Landing|Stair|Bullnose|Winder)\b/i.test(name);return {name,w:Number(r.querySelector('.w').value),l:Number(r.querySelector('.l').value),index:i,fixedPile:fixed};}).filter(r=>r.w>0&&r.l>0);
+ const raw=[...list.querySelectorAll('.room')].map((r,i)=>{const name=r.querySelector('.name').value.trim()||'Room '+(i+1);const fixed=/\b(Landing|Stair|Bullnose|Winder|Cut)\b/i.test(name);return {name,w:Number(r.querySelector('.w').value),l:Number(r.querySelector('.l').value),index:i,fixedPile:fixed};}).filter(r=>r.w>0&&r.l>0);
  if(!raw.length){alert('Enter at least one room with valid measurements.');return}
  function makePlan(roll){
    const valid=raw.filter(r=>Math.min(r.w,r.l)<=roll+0.00001);
@@ -419,7 +419,7 @@ drawExport.onclick=()=>{
   if(r.shape&&r.shape.length>=3){
    const parts=decomposeOrthogonalPolygon(r.shape);
    if(parts.length){
-    parts.forEach((p,i)=>cutItems.push({name:(/landing/i.test(r.name)?'Landing':r.name)+' - Cut '+(i+1),w:p.w,l:p.l,kind:'Shape cut',fixedPile:true}));
+    parts.forEach((p,i)=>cutItems.push({name:(/landing|site drawing|shape/i.test(r.name)?'Landing':r.name)+' - Cut '+(i+1),w:p.w,l:p.l,kind:'Shape cut',fixedPile:true,sourceShape:r.name,shapeCutIndex:i+1}));
    }else cutItems.push({name:r.name,w:r.w,l:r.l,kind:r.kind||'Room'});
   }else cutItems.push({name:r.name,w:r.w,l:r.l,kind:r.kind||'Room'});
  });
