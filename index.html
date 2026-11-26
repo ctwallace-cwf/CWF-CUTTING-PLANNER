@@ -459,12 +459,14 @@ drawExport.onclick=()=>{
  if(!saved.length){alert('Save rooms and stairs first');return;}
  const cutItems=[];
  saved.forEach((r)=>{
+  const stairKind=/stair|bullnose|winder/i.test(r.kind||r.name);
+  // Each stair is imported individually; its width is pile-direction locked.
+  if(stairKind){cutItems.push({name:r.name,w:Number(r.w),l:Number(r.l),kind:r.kind||'Stair',fixedPile:true});return;}
   if(r.shape&&r.shape.length>=3){
    const parts=decomposeOrthogonalPolygon(r.shape);
-   if(parts.length){
-    parts.forEach((p,i)=>cutItems.push({name:(/landing|site drawing|shape/i.test(r.name)?'Landing':r.name)+' - Cut '+(i+1),w:p.w,l:p.l,kind:'Shape cut',fixedPile:true,sourceShape:r.name,shapeCutIndex:i+1}));
-   }else cutItems.push({name:r.name,w:r.w,l:r.l,kind:r.kind||'Room'});
-  }else cutItems.push({name:r.name,w:r.w,l:r.l,kind:r.kind||'Room'});
+   if(parts.length)parts.forEach((p,i)=>cutItems.push({name:(/landing|site drawing|shape/i.test(r.name)?'Landing':r.name)+' - Cut '+(i+1),w:p.w,l:p.l,kind:'Shape cut',fixedPile:true,sourceShape:r.name,shapeCutIndex:i+1}));
+   else cutItems.push({name:r.name,w:Number(r.w),l:Number(r.l),kind:r.kind||'Room'});
+  }else cutItems.push({name:r.name,w:Number(r.w),l:Number(r.l),kind:r.kind||'Room'});
  });
  rooms.innerHTML='';
  cutItems.forEach(item=>{
