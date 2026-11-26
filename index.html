@@ -432,7 +432,10 @@ drawExport.onclick=()=>{
   row.querySelectorAll('input').forEach(x=>x.removeAttribute('readonly'));
  });
  showPage('carpet');
- alert('Imported '+cutItems.length+' individual carpet cuts, including each stair and winder. Calculate the cutting plan to optimise all pieces together on 4m and 5m rolls.');
+ const result=document.getElementById('result');result.hidden=false;
+ document.getElementById('calc').click();
+ setTimeout(()=>{result.scrollIntoView({behavior:'smooth',block:'start'});},250);
+ alert('Imported '+cutItems.length+' individual cuts. The 4m and 5m cutting plans have been calculated automatically. Stair, bullnose and winder pile direction remains locked.');
 };drawPrint.onclick=()=>{if(!saved.length){alert('Save rooms first');return;}let win=window.open('','_blank');if(!win)return;win.document.write('<h1>Site measurements</h1><table border=1 cellpadding=8><tr><th>Room</th><th>Width</th><th>Length</th><th>Area</th></tr>'+saved.map(r=>'<tr><td>'+esc(r.name)+'</td><td>'+r.w+'</td><td>'+r.l+'</td><td>'+(r.w*r.l).toFixed(2)+'</td></tr>').join('')+'</table>');win.document.close();win.print()};
 let wc=0;addWinder.onclick=()=>{let d=document.createElement('div');d.className='drawRoom';d.innerHTML='<b>Winder '+(++wc)+'</b><div class="grid"><div><label>Width (m)</label><input class="ww" type="number" step=".01"></div><div><label>Cut length (m)</label><input class="wl" type="number" step=".01"></div></div><button class="remove" type="button">Remove</button>';d.querySelector('button').onclick=()=>d.remove();winderRows.appendChild(d)};
 bullnoseEnabled.onchange=()=>bullnoseQty.disabled=!bullnoseEnabled.checked;
