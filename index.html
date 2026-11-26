@@ -153,6 +153,19 @@ document.getElementById('calc').onclick=()=>{
    const nestedIds=new Set();
    placed.filter(p=>p.shape&&p.shape.length>=3).forEach(landing=>{landing.nested=[];shapeOffcuts(landing.shape,landing.w,landing.l).forEach(off=>{placed.filter(p=>/^(Stair|Bullnose|Winder)\b/i.test(p.name)&&!nestedIds.has(p.index)&&p.fixedPile).forEach(stair=>{if(stair.w<=off.w+1e-5&&stair.l<=off.l+1e-5){const nx=Math.floor((off.w+1e-5)/stair.w),ny=Math.floor((off.l+1e-5)/stair.l);for(let y=0;y<ny&&!nestedIds.has(stair.index);y++)for(let x=0;x<nx&&!nestedIds.has(stair.index);x++){nestedIds.add(stair.index);landing.nested.push({name:stair.name,w:stair.w,l:stair.l,x:off.x+x*stair.w,y:off.y+y*stair.l,index:stair.index});}});});});
    if(nestedIds.size){shelves.forEach(sh=>{sh.items=sh.items.filter(x=>!nestedIds.has(x.index));let cursor=0;sh.items.forEach(x=>{x.acrossStart=cursor;cursor+=x.across;});sh.used=cursor;sh.height=sh.items.reduce((h,x)=>Math.max(h,x.run),0);});shelves=shelves.filter(sh=>sh.items.length);placed=placed.filter(p=>!nestedIds.has(p.index));placed.push(...raw.filter(p=>nestedIds.has(p.index)).map(p=>({...p,nestedInto:placed.find(l=>l.nested&&l.nested.some(n=>n.index===p.index))?.index})));}
+   // Remaining ordinary stairs are grouped into strips of five. Any stairs
+   // already nested into landing offcuts remain individual pieces.
+   const remainingStairs=placed.filter(p=>/^(Stair) \d+$/i.test(p.name)&&p.fixedPile);
+   if(remainingStairs.length){
+     const stairKeys=new Set(remainingStairs.map(p=>p.index));
+     const others=placed.filter(p=>!stairKeys.has(p.index));
+     const grouped=[];
+     const sortedStairs=[...remainingStairs].sort((a,b)=>a.index-b.index);
+     for(let i=0;i<sortedStairs.length;i+=5){const batch=sortedStairs.slice(i,i+5),first=batch[0];grouped.push({...first,name:'Stairs '+batch[0].name.replace(/\D/g,'')+'-'+batch[batch.length-1].name.replace(/\D/g,'')+' (strip)',w:first.w,l:first.l*batch.length,run:first.l*batch.length,across:first.w,area:batch.reduce((s,p)=>s+p.w*p.l,0),indices:batch.map(p=>p.index),stairCount:batch.length,fixedPile:true,rotated:false,shape:null});}
+     const candidates=[...others,...grouped].sort((a,b)=>(b.w*b.l-a.w*a.l));const newShelves=[];
+     candidates.forEach(item=>{const opts=item.fixedPile?[{across:item.w,run:item.l,rotated:false}]:[{across:item.w,run:item.l,rotated:false},{across:item.l,run:item.w,rotated:true}].filter(o=>o.across<=roll+1e-5);let choice=null;newShelves.forEach((sh,si)=>opts.forEach(o=>{if(o.across<=roll-sh.used+1e-5){const score=Math.max(0,o.run-sh.height)*100000+(roll-sh.used-o.across);if(!choice||score<choice.score)choice={si,o,score};}}));if(choice){const sh=newShelves[choice.si];sh.height=Math.max(sh.height,choice.o.run);sh.items.push({...item,...choice.o,acrossStart:sh.used});sh.used+=choice.o.across;}else if(opts.length){opts.sort((a,b)=>a.run-b.run);const o=opts[0];newShelves.push({height:o.run,used:o.across,items:[{...item,...o,acrossStart:0}]});}});
+     shelves=newShelves;placed=shelves.flatMap(s=>s.items).concat(placed.filter(p=>p.nestedInto!==undefined));
+   }
    const total=shelves.reduce((sum,sh)=>sum+sh.height,0);
    const supplied=total*roll;
    const area=placed.reduce((sum,r)=>sum+(r.area||r.w*r.l),0);
@@ -170,7 +183,7 @@ document.getElementById('calc').onclick=()=>{
    return a.roll-b.roll;
  });
  const plan=plans[0],roll=plan.roll,shelves=plan.shelves,placed=plan.placed,total=plan.total;
- const placedByIndex=new Map(placed.map(r=>[r.index,r]));
+ const placedByIndex=new Map();placed.forEach(r=>{(r.indices||[r.index]).forEach(idx=>placedByIndex.set(idx,r));});
  const rows=raw.map(r=>{const p=placedByIndex.get(r.index);return p?{...p,ok:true}:{...r,ok:false}});
  const invalid=rows.filter(r=>!r.ok);
  document.getElementById('result').hidden=false;
