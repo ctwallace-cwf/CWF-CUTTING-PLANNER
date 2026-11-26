@@ -488,33 +488,29 @@ function decomposeOrthogonalPolygon(poly){
  return rects.map(r=>({w:r.x2-r.x1,l:r.y2-r.y1,area:(r.x2-r.x1)*(r.y2-r.y1)})).filter(r=>r.w>0.02&&r.l>0.02);
 }
 drawExport.onclick=()=>{
- if(!saved.length){alert('Save rooms and stairs first');return;}
  const cutItems=[];
- saved.forEach((r)=>{
+ // Import ordinary saved rooms and non-stair pieces first.
+ saved.forEach(r=>{
   const stairKind=/stair|bullnose|winder|half landing|1\/2 landing/i.test(r.kind||r.name);
-  // Each stair is imported individually; its width is pile-direction locked.
-  if(stairKind){cutItems.push({name:r.name,w:Number(r.w),l:Number(r.l),kind:r.kind||'Stair',fixedPile:true});return;}
-  if(r.shape&&r.shape.length>=3){
-   const parts=decomposeOrthogonalPolygon(r.shape);
-   if(parts.length)parts.forEach((p,i)=>cutItems.push({name:r.name+' - Cut '+(i+1),w:p.w,l:p.l,kind:'Shape cut',fixedPile:false,sourceShape:r.name,shapeCutIndex:i+1}));
-   else cutItems.push({name:r.name,w:Number(r.w),l:Number(r.l),kind:r.kind||'Room'});
-  }else cutItems.push({name:r.name,w:Number(r.w),l:Number(r.l),kind:r.kind||'Room'});
+  if(stairKind)return; // stair cuts are read directly from the current form below to avoid lost/stale saved state
+  if(r.shape&&r.shape.length>=3){const parts=decomposeOrthogonalPolygon(r.shape);if(parts.length)parts.forEach((p,i)=>cutItems.push({name:r.name+' - Cut '+(i+1),w:p.w,l:p.l,kind:'Shape cut',fixedPile:false}));else cutItems.push({name:r.name,w:Number(r.w),l:Number(r.l),kind:r.kind||'Room'});}
+  else cutItems.push({name:r.name,w:Number(r.w),l:Number(r.l),kind:r.kind||'Room'});
  });
+ // Standard stairs: import directly from the form, even if Add stairs to site plan wasn't pressed.
+ const q=Math.max(0,Math.floor(Number(document.getElementById('stairQty').value)||0)),sw=Number(document.getElementById('stairWidth').value)||0,sl=Number(document.getElementById('stairLength').value)||0;
+ if(q>0&&(!sw||!sl)){alert('Enter stair width and cut length before importing.');return;}
+ for(let i=0;i<q;i++)cutItems.push({name:'Stair '+(i+1),w:sw,l:sl,kind:'Standard stair',fixedPile:true});
+ const bull=document.getElementById('bullnoseEnabled').checked,bq=bull?Math.max(0,Math.floor(Number(document.getElementById('bullnoseQty').value)||0)):0,bw=Number(document.getElementById('bullnoseWidth').value)||0,bl=Number(document.getElementById('bullnoseLength').value)||0;
+ if(bq>0&&(!bw||!bl)){alert('Enter bullnose width and cut length before importing.');return;}
+ for(let i=0;i<bq;i++)cutItems.push({name:'Bullnose '+(i+1),w:bw,l:bl,kind:'Bullnose',fixedPile:true});
+ document.querySelectorAll('#winderRows .drawRoom').forEach((row,i)=>{const w=Number(row.querySelector('.ww').value)||0,l=Number(row.querySelector('.wl').value)||0;if(w>0&&l>0)cutItems.push({name:'Winder '+(i+1),w,l,kind:'Winder',fixedPile:true});});
+ document.querySelectorAll('#landingRows .drawRoom').forEach((row,i)=>{const w=Number(row.querySelector('.landingW').value)||0,l=Number(row.querySelector('.landingL').value)||0;if(w>0&&l>0)cutItems.push({name:'1/2 Landing '+(i+1),w,l,kind:'Half landing',fixedPile:true});});
+ saved.filter(r=>/odd-shaped piece/i.test(r.kind||r.name)).forEach(r=>cutItems.push({name:r.name,w:Number(r.w),l:Number(r.l),kind:r.kind||'Odd-shaped piece',fixedPile:false}));
+ if(!cutItems.length){alert('Add and save at least one room or enter stair measurements.');return;}
  rooms.innerHTML='';
- cutItems.forEach(item=>{
-  addRoom();const row=rooms.lastElementChild;
-  row.querySelector('.name').value=item.name;
-  row.querySelector('.w').value=item.w.toFixed(2);
-  row.querySelector('.l').value=item.l.toFixed(2);
-  row.dataset.cwfFixedPile=item.fixedPile?'true':'false';
-  row.dataset.cwfKind=item.kind||'';
-  row.querySelectorAll('input').forEach(x=>x.removeAttribute('readonly'));
- });
- showPage('carpet');
- const result=document.getElementById('result');result.hidden=false;
- document.getElementById('calc').click();
- setTimeout(()=>{result.scrollIntoView({behavior:'smooth',block:'start'});},250);
- alert('Imported '+cutItems.length+' individual cuts. The 4m and 5m cutting plans have been calculated automatically. Stair, bullnose and winder pile direction remains locked.');
+ cutItems.forEach(item=>{addRoom();const row=rooms.lastElementChild;if(!row)return;row.querySelector('.name').value=item.name;row.querySelector('.w').value=Number(item.w).toFixed(2);row.querySelector('.l').value=Number(item.l).toFixed(2);row.dataset.cwfFixedPile=item.fixedPile?'true':'false';row.dataset.cwfKind=item.kind||'';row.querySelectorAll('input').forEach(x=>x.removeAttribute('readonly'));});
+ showPage('carpet');const result=document.getElementById('result');result.hidden=false;document.getElementById('calc').click();setTimeout(()=>{result.scrollIntoView({behavior:'smooth',block:'start'});},250);
+ alert('Imported '+cutItems.length+' pieces into the cutting planner, including '+(q+bq+document.querySelectorAll('#winderRows .drawRoom').length+document.querySelectorAll('#landingRows .drawRoom').length)+' stair/landing entries.');
 };drawPrint.onclick=()=>{if(!saved.length){alert('Save rooms first');return;}let win=window.open('','_blank');if(!win)return;win.document.write('<h1>Site measurements</h1><table border=1 cellpadding=8><tr><th>Room</th><th>Width</th><th>Length</th><th>Area</th></tr>'+saved.map(r=>'<tr><td>'+esc(r.name)+'</td><td>'+r.w.toFixed(2)+'</td><td>'+r.l.toFixed(2)+'</td><td>'+(Number(r.area)||r.w*r.l).toFixed(2)+'</td></tr>').join('')+'</table>');win.document.close();win.print()};
 let wc=0;addWinder.onclick=()=>{let d=document.createElement('div');d.className='drawRoom';d.innerHTML='<b>Winder '+(++wc)+'</b><div class="grid"><div><label>Width (m)</label><input class="ww" type="number" step=".01"></div><div><label>Cut length (m)</label><input class="wl" type="number" step=".01"></div></div><button class="remove" type="button">Remove</button>';d.querySelector('button').onclick=()=>d.remove();winderRows.appendChild(d)};
 bullnoseEnabled.onchange=()=>bullnoseQty.disabled=!bullnoseEnabled.checked;
