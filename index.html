@@ -419,7 +419,7 @@ drawExport.onclick=()=>{
   if(r.shape&&r.shape.length>=3){
    const parts=decomposeOrthogonalPolygon(r.shape);
    if(parts.length){
-    parts.forEach((p,i)=>cutItems.push({name:parts.length===1?r.name:r.name+' - Cut '+(i+1),w:p.w,l:p.l,kind:'Shape cut'}));
+    parts.forEach((p,i)=>cutItems.push({name:(/landing/i.test(r.name)?'Landing':r.name)+' - Cut '+(i+1),w:p.w,l:p.l,kind:'Shape cut',fixedPile:true}));
    }else cutItems.push({name:r.name,w:r.w,l:r.l,kind:r.kind||'Room'});
   }else cutItems.push({name:r.name,w:r.w,l:r.l,kind:r.kind||'Room'});
  });
