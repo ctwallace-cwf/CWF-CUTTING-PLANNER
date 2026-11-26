@@ -395,7 +395,7 @@ document.getElementById('rollOptimizer').hidden=false;
 // Simple dimension drawing and stairs calculator
 (function(){
 const saved=[];let windersN=0,currentPolygon=null,sketchPts=[],drawing=false,sketchFinished=false;
-drawMode.onchange=()=>{rectEntry.hidden=drawMode.value!=='rectangle';wallEntry.hidden=drawMode.value!=='walls';};
+const drawModeEl=document.getElementById('drawMode'),rectEntryEl=document.getElementById('rectEntry'),wallEntryEl=document.getElementById('wallEntry');function syncDrawingMode(){const isWalls=drawModeEl.value==='walls';rectEntryEl.hidden=isWalls;wallEntryEl.hidden=!isWalls;}drawModeEl.addEventListener('change',syncDrawingMode);drawModeEl.addEventListener('input',syncDrawingMode);syncDrawingMode();
 const sketchCanvas=document.getElementById('sketchCanvas'),sketchCtx=sketchCanvas.getContext('2d');
 function sketchDraw(){sketchCtx.clearRect(0,0,sketchCanvas.width,sketchCanvas.height);sketchCtx.strokeStyle='#d7b56d';sketchCtx.lineWidth=5;sketchCtx.lineJoin='round';sketchCtx.lineCap='round';if(sketchPts.length){sketchCtx.beginPath();sketchCtx.moveTo(...sketchPts[0]);sketchPts.forEach(p=>sketchCtx.lineTo(...p));if(sketchFinished)sketchCtx.closePath();sketchCtx.stroke();}}
 function canvasPoint(e){let r=sketchCanvas.getBoundingClientRect();return [(e.clientX-r.left)*sketchCanvas.width/r.width,(e.clientY-r.top)*sketchCanvas.height/r.height];}
