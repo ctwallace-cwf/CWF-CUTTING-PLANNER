@@ -493,7 +493,9 @@ drawExport.onclick=()=>{
  saved.forEach(r=>{
   const stairKind=/stair|bullnose|winder|half landing|1\/2 landing/i.test(r.kind||r.name);
   if(stairKind)return; // stair cuts are read directly from the current form below to avoid lost/stale saved state
-  if(r.shape&&r.shape.length>=3){const parts=decomposeOrthogonalPolygon(r.shape);const cutArea=parts.reduce((sum,p)=>sum+(p.area||p.w*p.l),0),actualArea=Number(r.area)||polygonArea(r.shape);if(!parts.length||Math.abs(cutArea-actualArea)>0.01){alert('Cut conversion failed for '+r.name+': drawn area '+actualArea.toFixed(2)+'m² but rectangular cuts total '+cutArea.toFixed(2)+'m². Please redraw or check wall measurements. No cutting plan has been imported.');return;}parts.forEach((p,i)=>cutItems.push({name:r.name+' - Cut '+(i+1),w:p.w,l:p.l,kind:'Shape cut',fixedPile:false}));}
+  if(r.shape&&r.shape.length>=3){ // Keep an irregular room/landing as ONE carpet piece; use its bounding dimensions for roll placement, not decomposed rectangles.
+ cutItems.push({name:r.name+' (single shaped piece)',w:Number(r.w),l:Number(r.l),kind:'Irregular shaped piece',fixedPile:false,shape:r.shape,area:Number(r.area)||polygonArea(r.shape)});
+}
   else cutItems.push({name:r.name,w:Number(r.w),l:Number(r.l),kind:r.kind||'Room'});
  });
  // Standard stairs: import directly from the form, even if Add stairs to site plan wasn't pressed.
