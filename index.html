@@ -503,7 +503,7 @@ drawExport.onclick=()=>{
  const q=Math.max(0,Math.floor(Number(document.getElementById('stairQty').value)||0)),sw=Number(document.getElementById('stairWidth').value)||0,sl=Number(document.getElementById('stairLength').value)||0;
  if(q>0&&(!sw||!sl)){alert('Enter stair width and cut length before importing.');return;}
  // Combine groups of five stairs into continuous pile-direction strips. This lets strips sit beside a landing rather than wasting a separate roll section for every tread.
- for(let start=0;start<q;start+=5){const count=Math.min(5,q-start);if(count===5)cutItems.push({name:'Stairs '+(start+1)+'-'+(start+count)+' (5 stair strip)',w:sw,l:sl*count,kind:'Stair strip',fixedPile:true,stairCount:count});else for(let n=0;n<count;n++)cutItems.push({name:'Stair '+(start+n+1),w:sw,l:sl,kind:'Standard stair',fixedPile:true});}
+ for(let start=0;start<q;start+=6){const count=Math.min(6,q-start);if(count===6)cutItems.push({name:'Stairs '+(start+1)+'-'+(start+count)+' (6 stair strip)',w:sw,l:sl*count,kind:'Stair strip',fixedPile:true,stairCount:count});else for(let n=0;n<count;n++)cutItems.push({name:'Stair '+(start+n+1),w:sw,l:sl,kind:'Standard stair',fixedPile:true});}
  const bull=document.getElementById('bullnoseEnabled').checked,bq=bull?Math.max(0,Math.floor(Number(document.getElementById('bullnoseQty').value)||0)):0,bw=Number(document.getElementById('bullnoseWidth').value)||0,bl=Number(document.getElementById('bullnoseLength').value)||0;
  if(bq>0&&(!bw||!bl)){alert('Enter bullnose width and cut length before importing.');return;}
  for(let i=0;i<bq;i++)cutItems.push({name:'Bullnose '+(i+1),w:bw,l:bl,kind:'Bullnose',fixedPile:true});
