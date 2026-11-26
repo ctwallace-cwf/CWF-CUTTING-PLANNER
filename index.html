@@ -228,6 +228,18 @@ const quoteTotals={carpet:0,vinyl:0,laminate:0,lvt:0,prep:0,uplift:0};
 const fittingTotals={carpet:0,vinyl:0,laminate:0,lvt:0,uplift:0};
 const quoteLabels={carpet:'Carpet',vinyl:'Vinyl',laminate:'Laminate',lvt:'LVT',prep:'Screed / DPM / Glue',uplift:'Uplift / removal'};
 function showPage(name){document.querySelectorAll('.page').forEach(p=>p.hidden=true);document.getElementById('page-'+name).hidden=false;const buttonLabels={carpet:'Carpet',drawing:'Site Drawing',vinyl:'Vinyl',laminate:'Laminate',lvt:'LVT',prep:'Screed / DPM / Glue',contracts:'Contract flooring',tiles:'Carpet tiles',uplift:'Uplift / Removal'};document.getElementById('pageNav').querySelectorAll('button').forEach(b=>b.style.background=b.textContent.trim()===buttonLabels[name]?'#d7b56d':'#171717');if(name==='quote')renderQuote();if(name==='drawing'&&window.resizeDrawingCanvas)window.resizeDrawingCanvas();window.scrollTo(0,0)}
+window.showPage=showPage;
+document.addEventListener('DOMContentLoaded',()=>{
+ const nav=document.getElementById('pageNav');
+ if(!nav)return;
+ nav.querySelectorAll('button').forEach((b,i)=>{
+  const names=['carpet','drawing','vinyl','laminate','lvt','prep','contracts','tiles','uplift'];
+  b.setAttribute('data-page-target',names[i]||'carpet');
+  b.addEventListener('touchend',e=>{e.preventDefault();showPage(b.dataset.pageTarget);},{passive:false});
+  b.addEventListener('click',e=>{e.preventDefault();showPage(b.dataset.pageTarget);});
+ });
+});
+
 function addMeasureRoom(containerId){
  const list=document.getElementById(containerId);
  const row=document.createElement('div');row.className='room measure-room';
