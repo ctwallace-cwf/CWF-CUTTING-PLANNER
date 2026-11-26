@@ -155,7 +155,16 @@ document.getElementById('calc').onclick=()=>{
    return {roll,valid,placed,shelves,total,supplied,area,waste:Math.max(0,supplied-area)};
  }
  const plans=[makePlan(4),makePlan(5)];
- plans.sort((a,b)=>b.placed.length-a.placed.length||a.total-b.total||a.supplied-b.supplied||a.roll-b.roll);
+ // Prefer a plan that places every piece. For complete plans, minimise purchased
+ // area/waste first, then linear metres; choose 4m only when equally efficient.
+ plans.sort((a,b)=>{
+   const aComplete=a.placed.length===raw.length,bComplete=b.placed.length===raw.length;
+   if(aComplete!==bComplete)return bComplete-aComplete;
+   if(a.placed.length!==b.placed.length)return b.placed.length-a.placed.length;
+   if(Math.abs(a.waste-b.waste)>0.00001)return a.waste-b.waste;
+   if(Math.abs(a.total-b.total)>0.00001)return a.total-b.total;
+   return a.roll-b.roll;
+ });
  const plan=plans[0],roll=plan.roll,shelves=plan.shelves,placed=plan.placed,total=plan.total;
  const placedByIndex=new Map(placed.map(r=>[r.index,r]));
  const rows=raw.map(r=>{const p=placedByIndex.get(r.index);return p?{...p,ok:true}:{...r,ok:false}});
@@ -170,7 +179,7 @@ document.getElementById('calc').onclick=()=>{
  const plateCost=standardPlates*5+specialPlates*15;
  const grandTotal=carpetCost+underlayCost+plateCost;
  window.cwfCarpetQuoteLines=[{label:'Carpet',amount:'£'+carpetCost.toFixed(2)}];if(underlayEnabled)window.cwfCarpetQuoteLines.push({label:'Underlay',amount:'£'+underlayCost.toFixed(2)});if(standardPlates)window.cwfCarpetQuoteLines.push({label:'Standard doorplates ('+standardPlates+')',amount:'£'+(standardPlates*5).toFixed(2)});if(specialPlates)window.cwfCarpetQuoteLines.push({label:'Special doorplates ('+specialPlates+')',amount:'£'+(specialPlates*15).toFixed(2)});
- const fittingGroups=new Map();raw.forEach(r=>{if(/^(Stair|Bullnose|Winder)\b/i.test(r.name))return;const groupName=r.name.replace(/\s+-\s+Cut\s+\d+$/i,'');const g=fittingGroups.get(groupName)||{name:groupName,area:0};g.area+=r.w*r.l;fittingGroups.set(groupName,g);});const roomFitting=[...fittingGroups.values()].map(r=>({...r,charge:Math.max(60,r.area*5)}));
+ const fittingGroups=new Map();raw.forEach(r=>{if(/^(Stair|Bullnose|Winder|1\/2 Landing|Half landing)\b/i.test(r.name))return;const groupName=r.name.replace(/\s+-\s+Cut\s+\d+$/i,'');const g=fittingGroups.get(groupName)||{name:groupName,area:0};g.area+=r.w*r.l;fittingGroups.set(groupName,g);});const roomFitting=[...fittingGroups.values()].map(r=>({...r,charge:Math.max(60,r.area*5)}));
  const baseRoomFitting=roomFitting.reduce((sum,r)=>sum+r.charge,0); const fittingCost=baseRoomFitting+(hallEnabled?30:0)+(wrapStairsEnabled?100:0)+(doubleStairsEnabled?80:0)+(stairsEnabled?Math.max(50,100-baseRoomFitting):0);
  const jobTotal=grandTotal+fittingCost;
  quoteTotals.carpet=jobTotal; fittingTotals.carpet=fittingCost;
@@ -459,7 +468,7 @@ drawExport.onclick=()=>{
   if(stairKind){cutItems.push({name:r.name,w:Number(r.w),l:Number(r.l),kind:r.kind||'Stair',fixedPile:true});return;}
   if(r.shape&&r.shape.length>=3){
    const parts=decomposeOrthogonalPolygon(r.shape);
-   if(parts.length)parts.forEach((p,i)=>cutItems.push({name:(/landing|site drawing|shape/i.test(r.name)?'Landing':r.name)+' - Cut '+(i+1),w:p.w,l:p.l,kind:'Shape cut',fixedPile:true,kind:'Landing/shape cut',sourceShape:r.name,shapeCutIndex:i+1}));
+   if(parts.length)parts.forEach((p,i)=>cutItems.push({name:r.name+' - Cut '+(i+1),w:p.w,l:p.l,kind:'Shape cut',fixedPile:false,sourceShape:r.name,shapeCutIndex:i+1}));
    else cutItems.push({name:r.name,w:Number(r.w),l:Number(r.l),kind:r.kind||'Room'});
   }else cutItems.push({name:r.name,w:Number(r.w),l:Number(r.l),kind:r.kind||'Room'});
  });
