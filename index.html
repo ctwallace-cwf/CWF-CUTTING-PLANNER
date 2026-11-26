@@ -494,7 +494,8 @@ drawExport.onclick=()=>{
   const stairKind=/stair|bullnose|winder|half landing|1\/2 landing/i.test(r.kind||r.name);
   if(stairKind)return; // stair cuts are read directly from the current form below to avoid lost/stale saved state
   if(r.shape&&r.shape.length>=3){ // Keep an irregular room/landing as ONE carpet piece; use its bounding dimensions for roll placement, not decomposed rectangles.
- cutItems.push({name:r.name+' (single shaped piece)',w:Number(r.w),l:Number(r.l),kind:'Irregular shaped piece',fixedPile:false,shape:r.shape,area:Number(r.area)||polygonArea(r.shape)});
+ // Orient the landing so the pile runs along the 2.5m direction: 2.0m across the roll, 2.5m length.
+ cutItems.push({name:r.name+' (single shaped piece)',w:Number(r.l),l:Number(r.w),kind:'Irregular shaped piece',fixedPile:true,shape:r.shape,area:Number(r.area)||polygonArea(r.shape)});
 }
   else cutItems.push({name:r.name,w:Number(r.w),l:Number(r.l),kind:r.kind||'Room'});
  });
