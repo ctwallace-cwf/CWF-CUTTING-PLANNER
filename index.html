@@ -98,7 +98,7 @@ document.getElementById('calc').onclick=()=>{
  const standardPlates=Math.max(0,Math.floor(Number(document.getElementById('standardPlates').value)||0));
  const specialPlates=Math.max(0,Math.floor(Number(document.getElementById('specialPlates').value)||0));
  const stairsEnabled=document.getElementById('stairsEnabled').checked, hallEnabled=document.getElementById('hallEnabled').checked, wrapStairsEnabled=document.getElementById('wrapStairsEnabled').checked, doubleStairsEnabled=document.getElementById('doubleStairsEnabled').checked;
- const raw=[...list.querySelectorAll('.room')].map((r,i)=>{const name=r.querySelector('.name').value.trim()||'Room '+(i+1);const fixed=/^(Stair|Bullnose|Winder)\b/i.test(name);return {name,w:Number(r.querySelector('.w').value),l:Number(r.querySelector('.l').value),index:i,fixedPile:fixed};}).filter(r=>r.w>0&&r.l>0);
+ const raw=[...list.querySelectorAll('.room')].map((r,i)=>{const name=r.querySelector('.name').value.trim()||'Room '+(i+1);const fixed=/\b(Landing|Stair|Bullnose|Winder)\b/i.test(name);return {name,w:Number(r.querySelector('.w').value),l:Number(r.querySelector('.l').value),index:i,fixedPile:fixed};}).filter(r=>r.w>0&&r.l>0);
  if(!raw.length){alert('Enter at least one room with valid measurements.');return}
  function makePlan(roll){
    const valid=raw.filter(r=>Math.min(r.w,r.l)<=roll+0.00001);
