@@ -210,7 +210,7 @@ document.getElementById('calc').onclick=()=>{
 const quoteTotals={carpet:0,vinyl:0,laminate:0,lvt:0,prep:0,uplift:0};
 const fittingTotals={carpet:0,vinyl:0,laminate:0,lvt:0,uplift:0};
 const quoteLabels={carpet:'Carpet',vinyl:'Vinyl',laminate:'Laminate',lvt:'LVT',prep:'Screed / DPM / Glue',uplift:'Uplift / removal'};
-function showPage(name){document.querySelectorAll('.page').forEach(p=>p.hidden=true);document.getElementById('page-'+name).hidden=false;const buttonLabels={carpet:'Carpet',vinyl:'Vinyl',laminate:'Laminate',lvt:'LVT',prep:'Screed / DPM / Glue',contracts:'Contract flooring',tiles:'Carpet tiles',uplift:'Uplift / Removal'};document.getElementById('pageNav').querySelectorAll('button').forEach(b=>b.style.background=b.textContent.trim()===buttonLabels[name]?'#d7b56d':'#171717');if(name==='quote')renderQuote();window.scrollTo(0,0)}
+function showPage(name){document.querySelectorAll('.page').forEach(p=>p.hidden=true);document.getElementById('page-'+name).hidden=false;const buttonLabels={carpet:'Carpet',drawing:'Site Drawing',vinyl:'Vinyl',laminate:'Laminate',lvt:'LVT',prep:'Screed / DPM / Glue',contracts:'Contract flooring',tiles:'Carpet tiles',uplift:'Uplift / Removal'};document.getElementById('pageNav').querySelectorAll('button').forEach(b=>b.style.background=b.textContent.trim()===buttonLabels[name]?'#d7b56d':'#171717');if(name==='quote')renderQuote();window.scrollTo(0,0)}
 function addMeasureRoom(containerId){
  const list=document.getElementById(containerId);
  const row=document.createElement('div');row.className='room measure-room';
@@ -378,7 +378,7 @@ document.getElementById('rollOptimizer').hidden=false;
  const cv=document.getElementById('drawCanvas'),ctx=cv.getContext('2d');
  let points=[],rooms=[],scale=.25,roomNo=1;
  function resize(){const rect=cv.getBoundingClientRect(),dpr=window.devicePixelRatio||1;cv.width=rect.width*dpr;cv.height=rect.height*dpr;ctx.setTransform(dpr,0,0,dpr,0,0);draw();}
- function gridSize(){return Math.min(cv.clientWidth,cv.clientHeight)/8;}
+ function gridSize(){return Math.min(cv.clientWidth,cv.clientHeight)/16;}
  function xy(p){const g=gridSize(),cx=cv.clientWidth/2,cy=cv.clientHeight/2;return {x:cx+p.x/scale*g,y:cy-p.y/scale*g};}
  function draw(){if(!cv.clientWidth)return;ctx.clearRect(0,0,cv.clientWidth,cv.clientHeight);const g=gridSize(),w=cv.clientWidth,h=cv.clientHeight;
  ctx.strokeStyle='#383838';ctx.lineWidth=1;for(let x=w/2%g;x<w;x+=g){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,h);ctx.stroke()}for(let y=h/2%g;y<h;y+=g){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(w,y);ctx.stroke()}
@@ -394,7 +394,7 @@ document.getElementById('rollOptimizer').hidden=false;
  function stats(pts){let area=0,per=0;for(let i=0;i<pts.length;i++){const a=pts[i],b=pts[(i+1)%pts.length];area+=a.x*b.y-b.x*a.y;per+=Math.hypot(b.x-a.x,b.y-a.y)}return {area:Math.abs(area)/2,per};}
  function finish(){if(points.length<3){alert('Add at least 3 points to make a room.');return}const name=document.getElementById('drawRoomName').value.trim()||'Room '+roomNo;rooms.push({name,points:points.map(p=>({...p})),...stats(points)});roomNo++;document.getElementById('drawRoomName').value='Room '+roomNo;points=[];renderRooms();draw();}
  document.getElementById('drawClose').onclick=finish;
- document.getElementById('drawAddRect').onclick=()=>{const w=Number(document.getElementById('drawRectW').value),l=Number(document.getElementById('drawRectL').value);if(w<=0||l<=0){alert('Enter width and length.');return}points=[{x:0,y:0},{x:w,y:0},{x:w,y:l},{x:0,y:l}];finish();};
+ document.getElementById('drawAddRect').onclick=()=>{const w=Number(document.getElementById('drawRectW').value),l=Number(document.getElementById('drawRectL').value);if(w<=0||l<=0){alert('Enter width and length.');return}points=[{x:-w/2,y:-l/2},{x:w/2,y:-l/2},{x:w/2,y:l/2},{x:-w/2,y:l/2}];finish();};
  function renderRooms(){const box=document.getElementById('drawRooms');box.innerHTML=rooms.map((r,i)=>'<div class="drawRoom"><b>'+escapeHtml(r.name)+'</b> · '+r.area.toFixed(2)+'m² · perimeter '+r.per.toFixed(2)+'m · '+r.points.length+' walls/points<br><small>Bounding size: '+(Math.max(...r.points.map(p=>p.x))-Math.min(...r.points.map(p=>p.x))).toFixed(2)+' × '+(Math.max(...r.points.map(p=>p.y))-Math.min(...r.points.map(p=>p.y))).toFixed(2)+'m</small><button type="button" class="remove" data-delete="'+i+'">Delete room</button></div>').join('');box.querySelectorAll('[data-delete]').forEach(b=>b.onclick=()=>{rooms.splice(Number(b.dataset.delete),1);renderRooms();draw()});}
  function escapeHtml(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
  document.getElementById('drawDeleteAll').onclick=()=>{if(confirm('Delete all drawn rooms?')){rooms=[];points=[];renderRooms();draw()}};
