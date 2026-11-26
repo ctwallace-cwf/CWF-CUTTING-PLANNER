@@ -446,7 +446,7 @@ drawSaveRoom.onclick=()=>{
    shape.push(e.axis==='x'?[prev[0]+e.dir*v,prev[1]]:[prev[0],prev[1]+e.dir*v]);
   }
   const close=shape[shape.length-1],err=Math.hypot(close[0],close[1]);
-  if(err>0.08){alert('The entered measurements conflict with the drawn shape (closure error '+err.toFixed(2)+'m). Check the wall directions and dimensions.');return;}
+  if(err>0.01){alert('The wall measurements do not close accurately enough (closure error '+err.toFixed(3)+'m). Opposite walls must match. Please correct the measurements before saving so the cutting plan does not split the landing incorrectly.');return;}
   shape.pop();
   const minX=Math.min(...shape.map(p=>p[0])),minY=Math.min(...shape.map(p=>p[1]));
   shape=shape.map(p=>[p[0]-minX,p[1]-minY]);
@@ -493,7 +493,7 @@ drawExport.onclick=()=>{
  saved.forEach(r=>{
   const stairKind=/stair|bullnose|winder|half landing|1\/2 landing/i.test(r.kind||r.name);
   if(stairKind)return; // stair cuts are read directly from the current form below to avoid lost/stale saved state
-  if(r.shape&&r.shape.length>=3){const parts=decomposeOrthogonalPolygon(r.shape);if(parts.length)parts.forEach((p,i)=>cutItems.push({name:r.name+' - Cut '+(i+1),w:p.w,l:p.l,kind:'Shape cut',fixedPile:false}));else cutItems.push({name:r.name,w:Number(r.w),l:Number(r.l),kind:r.kind||'Room'});}
+  if(r.shape&&r.shape.length>=3){const parts=decomposeOrthogonalPolygon(r.shape);const cutArea=parts.reduce((sum,p)=>sum+(p.area||p.w*p.l),0),actualArea=Number(r.area)||polygonArea(r.shape);if(!parts.length||Math.abs(cutArea-actualArea)>0.01){alert('Cut conversion failed for '+r.name+': drawn area '+actualArea.toFixed(2)+'m² but rectangular cuts total '+cutArea.toFixed(2)+'m². Please redraw or check wall measurements. No cutting plan has been imported.');return;}parts.forEach((p,i)=>cutItems.push({name:r.name+' - Cut '+(i+1),w:p.w,l:p.l,kind:'Shape cut',fixedPile:false}));}
   else cutItems.push({name:r.name,w:Number(r.w),l:Number(r.l),kind:r.kind||'Room'});
  });
  // Standard stairs: import directly from the form, even if Add stairs to site plan wasn't pressed.
