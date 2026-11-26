@@ -383,8 +383,55 @@ function preview(){const w=+drawWidth.value||0,l=+drawLength.value||0,sh=documen
 function render(){drawRooms.innerHTML=saved.map((r,i)=>'<div class="drawRoom"><b>'+esc(r.name)+'</b> '+r.w.toFixed(2)+' × '+r.l.toFixed(2)+'m = '+(r.area||r.w*r.l).toFixed(2)+'m² <button class="remove" data-i="'+i+'">Delete</button></div>').join('');drawRooms.querySelectorAll('[data-i]').forEach(b=>b.onclick=()=>{saved.splice(+b.dataset.i,1);render()})}
 drawSaveRoom.onclick=()=>{let w=+drawWidth.value,l=+drawLength.value,shape=null,area=null;if(drawMode.value==='walls'){if(!sketchFinished||!currentPolygon){alert('Draw the shape and press Finish drawing first.');return;}const entered=[...wallRows.querySelectorAll('.wallLen')].map(x=>x.value.trim()===''?null:+x.value);if(entered.length!==currentPolygon.length||entered.some(v=>v!==null&&(!v||v<=0))){alert('Measurements must be positive numbers or left blank.');return;}const sketchEdges=currentPolygon.map((p,i)=>Math.hypot(currentPolygon[(i+1)%currentPolygon.length][0]-p[0],currentPolygon[(i+1)%currentPolygon.length][1]-p[1]));const known=entered.map((v,i)=>v===null?null:v/(sketchEdges[i]||1)).filter(v=>v!==null);const scale=known.length?known.reduce((a,b)=>a+b,0)/known.length:1/100;const lengths=entered.map((v,i)=>v===null?sketchEdges[i]*scale:v);shape=currentPolygon.map(p=>[p[0]*scale,p[1]*scale]);w=Math.max(...shape.map(p=>p[0]));l=Math.max(...shape.map(p=>p[1]));area=polygonArea(shape);wallShapePreview.innerHTML='<p>Measurements saved. '+(known.length?'Missing walls estimated from the sketch scale. ':'No measurements entered — shown as a proportion-only estimate, not real metres. ')+'Estimated area: '+area.toFixed(2)+'m².</p>';}if(!w||!l){alert('Enter dimensions or draw a wall shape.');return;}saved.push({name:drawRoomName.value||'Room '+(saved.length+1),w,l,shape,area});drawRoomName.value='Room '+(saved.length+1);currentPolygon=null;render()};
 drawDeleteAll.onclick=()=>{saved.length=0;render()};
-drawExport.onclick=()=>{if(!saved.length){alert('Save rooms first');return;}rooms.innerHTML='';saved.forEach(r=>{addRoom();let row=rooms.lastElementChild;row.querySelector('.name').value=r.name;row.querySelector('.w').value=r.w;row.querySelector('.l').value=r.l;row.querySelectorAll('input').forEach(x=>x.removeAttribute('readonly'))});showPage('carpet');alert('Imported rooms')};
-drawPrint.onclick=()=>{if(!saved.length){alert('Save rooms first');return;}let win=window.open('','_blank');if(!win)return;win.document.write('<h1>Site measurements</h1><table border=1 cellpadding=8><tr><th>Room</th><th>Width</th><th>Length</th><th>Area</th></tr>'+saved.map(r=>'<tr><td>'+esc(r.name)+'</td><td>'+r.w+'</td><td>'+r.l+'</td><td>'+(r.w*r.l).toFixed(2)+'</td></tr>').join('')+'</table>');win.document.close();win.print()};
+function decomposeOrthogonalPolygon(poly){
+ if(!poly||poly.length<3)return [];
+ const xs=[...new Set(poly.map(p=>Number(p[0].toFixed(5))))].sort((a,b)=>a-b);
+ const strips=[];
+ for(let i=0;i<xs.length-1;i++){
+  const x1=xs[i],x2=xs[i+1],xm=(x1+x2)/2;
+  if(x2-x1<1e-5)continue;
+  const ys=[];
+  for(let j=0;j<poly.length;j++){
+   const a=poly[j],b=poly[(j+1)%poly.length];
+   if((a[0]<=xm&&b[0]>xm)||(b[0]<=xm&&a[0]>xm)){
+    ys.push(a[1]+(xm-a[0])*(b[1]-a[1])/(b[0]-a[0]));
+   }
+  }
+  ys.sort((a,b)=>a-b);
+  for(let k=0;k+1<ys.length;k+=2){
+   if(ys[k+1]-ys[k]>1e-5)strips.push({x1,x2,y1:ys[k],y2:ys[k+1]});
+  }
+ }
+ // Merge adjacent vertical slabs with matching top/bottom boundaries.
+ const rects=[];
+ strips.forEach(s=>{
+  const found=rects.find(r=>Math.abs(r.x2-s.x1)<1e-4&&Math.abs(r.y1-s.y1)<1e-4&&Math.abs(r.y2-s.y2)<1e-4);
+  if(found)found.x2=s.x2;else rects.push({...s});
+ });
+ return rects.map(r=>({w:r.x2-r.x1,l:r.y2-r.y1,area:(r.x2-r.x1)*(r.y2-r.y1)})).filter(r=>r.w>0.02&&r.l>0.02);
+}
+drawExport.onclick=()=>{
+ if(!saved.length){alert('Save rooms and stairs first');return;}
+ const cutItems=[];
+ saved.forEach((r)=>{
+  if(r.shape&&r.shape.length>=3){
+   const parts=decomposeOrthogonalPolygon(r.shape);
+   if(parts.length){
+    parts.forEach((p,i)=>cutItems.push({name:parts.length===1?r.name:r.name+' - Cut '+(i+1),w:p.w,l:p.l,kind:'Shape cut'}));
+   }else cutItems.push({name:r.name,w:r.w,l:r.l,kind:r.kind||'Room'});
+  }else cutItems.push({name:r.name,w:r.w,l:r.l,kind:r.kind||'Room'});
+ });
+ rooms.innerHTML='';
+ cutItems.forEach(item=>{
+  addRoom();const row=rooms.lastElementChild;
+  row.querySelector('.name').value=item.name;
+  row.querySelector('.w').value=item.w.toFixed(2);
+  row.querySelector('.l').value=item.l.toFixed(2);
+  row.querySelectorAll('input').forEach(x=>x.removeAttribute('readonly'));
+ });
+ showPage('carpet');
+ alert('Imported '+cutItems.length+' individual carpet cuts, including each stair and winder. Calculate the cutting plan to optimise all pieces together on 4m and 5m rolls.');
+};drawPrint.onclick=()=>{if(!saved.length){alert('Save rooms first');return;}let win=window.open('','_blank');if(!win)return;win.document.write('<h1>Site measurements</h1><table border=1 cellpadding=8><tr><th>Room</th><th>Width</th><th>Length</th><th>Area</th></tr>'+saved.map(r=>'<tr><td>'+esc(r.name)+'</td><td>'+r.w+'</td><td>'+r.l+'</td><td>'+(r.w*r.l).toFixed(2)+'</td></tr>').join('')+'</table>');win.document.close();win.print()};
 let wc=0;addWinder.onclick=()=>{let d=document.createElement('div');d.className='drawRoom';d.innerHTML='<b>Winder '+(++wc)+'</b><div class="grid"><div><label>Width (m)</label><input class="ww" type="number" step=".01"></div><div><label>Cut length (m)</label><input class="wl" type="number" step=".01"></div></div><button class="remove" type="button">Remove</button>';d.querySelector('button').onclick=()=>d.remove();winderRows.appendChild(d)};
 bullnoseEnabled.onchange=()=>bullnoseQty.disabled=!bullnoseEnabled.checked;
 calcStairs.onclick=()=>{let total=0,lines=[];let q=+stairQty.value||0,w=+stairWidth.value||0,l=+stairLength.value||0;if(q&&w&&l){total+=q*w*l;lines.push('Standard: '+q+' × '+w+' × '+l+'m = '+(q*w*l).toFixed(2)+'m²')}let bq=bullnoseEnabled.checked?(+bullnoseQty.value||0):0,bw=+bullnoseWidth.value||0,bl=+bullnoseLength.value||0;if(bq&&bw&&bl){total+=bq*bw*bl;lines.push('Bullnose: '+bq+' × '+bw+' × '+bl+'m = '+(bq*bw*bl).toFixed(2)+'m²')}document.querySelectorAll('#winderRows .drawRoom').forEach((r,i)=>{let ww=+r.querySelector('.ww').value||0,wl=+r.querySelector('.wl').value||0;if(ww&&wl){total+=ww*wl;lines.push('Winder '+(i+1)+': '+ww+' × '+wl+'m = '+(ww*wl).toFixed(2)+'m²')}});if(!total){alert('Enter stair measurements and quantities');return;}stairsResult.innerHTML=lines.join('<br>')+'<br><b>Total stair carpet: '+total.toFixed(2)+'m²</b>'+(+price.value?' · Material at current carpet price: £'+(total*(+price.value)).toFixed(2):'')};
