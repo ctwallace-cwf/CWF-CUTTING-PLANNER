@@ -398,14 +398,16 @@ const sketchCanvas=document.getElementById('sketchCanvas'),sketchCtx=sketchCanva
 function sketchDraw(){sketchCtx.clearRect(0,0,sketchCanvas.width,sketchCanvas.height);sketchCtx.strokeStyle='#d7b56d';sketchCtx.lineWidth=5;sketchCtx.lineJoin='round';sketchCtx.lineCap='round';if(sketchPts.length){sketchCtx.beginPath();sketchCtx.moveTo(...sketchPts[0]);sketchPts.forEach(p=>sketchCtx.lineTo(...p));if(sketchFinished)sketchCtx.closePath();sketchCtx.stroke();}}
 function canvasPoint(e){let r=sketchCanvas.getBoundingClientRect();return [(e.clientX-r.left)*sketchCanvas.width/r.width,(e.clientY-r.top)*sketchCanvas.height/r.height];}
 // Reliable tap-to-place corners replaces freehand tracing (which was generating duplicate points).
-sketchCanvas.onpointerdown=e=>{if(sketchFinished)return;e.preventDefault();const p=canvasPoint(e);
+function addSketchPointFromEvent(e){if(sketchFinished)return;if(e.cancelable)e.preventDefault();const p=canvasPoint(e);
  if(!sketchPts.length){sketchPts=[p];sketchDraw();return;}
  const last=sketchPts[sketchPts.length-1];
- if(sketchPts.length>=3&&Math.hypot(p[0]-sketchPts[0][0],p[1]-sketchPts[0][1])<34){sketchFinished=true;sketchDraw();return;}
- // Snap each new edge to horizontal or vertical based on the dominant tap movement.
+ if(sketchPts.length>=3&&Math.hypot(p[0]-sketchPts[0][0],p[1]-sketchPts[0][1])<44){sketchFinished=true;sketchDraw();return;}
  const dx=p[0]-last[0],dy=p[1]-last[1];const snapped=Math.abs(dx)>=Math.abs(dy)?[p[0],last[1]]:[last[0],p[1]];
  if(Math.hypot(snapped[0]-last[0],snapped[1]-last[1])>12){sketchPts.push(snapped);sketchDraw();}
-};
+}
+sketchCanvas.style.pointerEvents='auto';sketchCanvas.style.touchAction='none';
+sketchCanvas.onpointerdown=e=>addSketchPointFromEvent(e);
+sketchCanvas.addEventListener('touchstart',e=>{if(e.touches&&e.touches.length){const t=e.touches[0];addSketchPointFromEvent({clientX:t.clientX,clientY:t.clientY,cancelable:e.cancelable,preventDefault:()=>e.preventDefault()});}},{passive:false});
 sketchCanvas.onpointermove=null;
 sketchCanvas.onpointerup=sketchCanvas.onpointercancel=()=>{};
 clearSketch.onclick=()=>{sketchPts=[];sketchFinished=false;wallRows.innerHTML='';currentPolygon=null;sketchDraw();wallShapePreview.innerHTML='';};
