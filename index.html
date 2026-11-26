@@ -155,7 +155,7 @@ document.getElementById('calc').onclick=()=>{
    if(nestedIds.size){shelves.forEach(sh=>{sh.items=sh.items.filter(x=>!nestedIds.has(x.index));let cursor=0;sh.items.forEach(x=>{x.acrossStart=cursor;cursor+=x.across;});sh.used=cursor;sh.height=sh.items.reduce((h,x)=>Math.max(h,x.run),0);});shelves=shelves.filter(sh=>sh.items.length);placed=placed.filter(p=>!nestedIds.has(p.index));placed.push(...raw.filter(p=>nestedIds.has(p.index)).map(p=>({...p,nestedInto:placed.find(l=>l.nested&&l.nested.some(n=>n.index===p.index))?.index})));}
    // Remaining ordinary stairs are grouped into strips of five. Any stairs
    // already nested into landing offcuts remain individual pieces.
-   const remainingStairs=placed.filter(p=>/^(Stair) \d+$/i.test(p.name)&&p.fixedPile);
+   const remainingStairs=placed.filter(p=>p.nestedInto===undefined&&/^(Stair) \d+$/i.test(p.name)&&p.fixedPile);
    if(remainingStairs.length){
      const stairKeys=new Set(remainingStairs.map(p=>p.index));
      const others=placed.filter(p=>!stairKeys.has(p.index));
