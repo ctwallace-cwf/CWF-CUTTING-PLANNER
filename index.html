@@ -391,37 +391,30 @@ drawSaveRoom.onclick=()=>{
   if(entered.length!==pts.length||entered.some(v=>v!==null&&(!Number.isFinite(v)||v<=0))){alert('Enter valid positive wall measurements.');return;}
   const edgeInfo=pts.map((p,i)=>{const q=pts[(i+1)%pts.length],dx=q[0]-p[0],dy=q[1]-p[1];if(Math.abs(dx)<4&&Math.abs(dy)<4)return null;return {axis:Math.abs(dx)>=Math.abs(dy)?'x':'y',dir:Math.abs(dx)>=Math.abs(dy)?Math.sign(dx):Math.sign(dy),pix:Math.abs(Math.abs(dx)>=Math.abs(dy)?dx:dy)};});
   if(edgeInfo.some(e=>!e)){alert('The drawing has a very short or unclear wall. Please redraw it.');return;}
-  // Missing walls may only be inferred when exactly one wall is missing on that axis.
-  const lengths=[...entered];
-  for(const axis of ['x','y']){
-   const missing=lengths.map((v,i)=>v===null&&edgeInfo[i].axis===axis?i:-1).filter(i=>i>=0);
-   if(missing.length>1){alert('Cannot safely estimate '+missing.length+' missing '+axis.toUpperCase()+' walls. Enter each missing measurement.');return;}
-   if(missing.length===1){
-    const idx=missing[0],dir=edgeInfo[idx].dir;
-    const other=lengths.map((v,i)=>v!==null&&edgeInfo[i].axis===axis?{v,dir:edgeInfo[i].dir}:null).filter(Boolean);
-    const opposite=other.filter(o=>o.dir===-dir).reduce((s,o)=>s+o.v,0),same=other.filter(o=>o.dir===dir).reduce((s,o)=>s+o.v,0);
-    const inferred=opposite-same;
-    if(inferred<=0){alert('The missing '+axis.toUpperCase()+' wall cannot be inferred from the entered dimensions. Check the measurements.');return;}
-    lengths[idx]=inferred;
-   }
-  }
-  if(lengths.some(v=>v===null)){alert('Enter all wall measurements. Missing measurements could not be safely inferred.');return;}
-  // Reconstruct a dimensionally exact orthogonal polygon using the entered lengths and drawn directions.
+  // Scale the drawn outline from entered measurements. Missing walls use the sketch proportions.
+  const axisScale={x:[],y:[]};
+  edgeInfo.forEach((e,i)=>{if(entered[i]!==null)axisScale[e.axis].push(entered[i]/e.pix);});
+  const allScales=[...axisScale.x,...axisScale.y];
+  if(!allScales.length){alert('Enter at least one wall measurement to scale the drawing into metres.');return;}
+  const globalScale=allScales.reduce((a,b)=>a+b,0)/allScales.length;
+  const sx=axisScale.x.length?axisScale.x.reduce((a,b)=>a+b,0)/axisScale.x.length:globalScale;
+  const sy=axisScale.y.length?axisScale.y.reduce((a,b)=>a+b,0)/axisScale.y.length:globalScale;
+  const lengths=entered.map((v,i)=>v===null?edgeInfo[i].pix*(edgeInfo[i].axis==='x'?sx:sy):v);
+  // Build a closed, straight-sided polygon using axis-specific sketch scaling.
   shape=[[0,0]];
   for(let i=0;i<pts.length;i++){
    const e=edgeInfo[i],v=lengths[i],prev=shape[shape.length-1];
    shape.push(e.axis==='x'?[prev[0]+e.dir*v,prev[1]]:[prev[0],prev[1]+e.dir*v]);
   }
   const close=shape[shape.length-1],err=Math.hypot(close[0],close[1]);
-  if(err>0.03){alert('The wall measurements do not close the drawing (gap '+err.toFixed(2)+'m). Check the dimensions before saving.');return;}
+  if(err>0.08){alert('The entered measurements conflict with the drawn shape (closure error '+err.toFixed(2)+'m). Check the wall directions and dimensions.');return;}
   shape.pop();
-  // Normalize coordinates to positive space without changing wall lengths.
   const minX=Math.min(...shape.map(p=>p[0])),minY=Math.min(...shape.map(p=>p[1]));
   shape=shape.map(p=>[p[0]-minX,p[1]-minY]);
   area=polygonArea(shape);w=Math.max(...shape.map(p=>p[0]));l=Math.max(...shape.map(p=>p[1]));
   if(area<=0||w<=0||l<=0){alert('This drawing produces an invalid area. Redraw it.');return;}
   currentPolygon=shape;
-  wallShapePreview.innerHTML='<p><b>Dimensions verified.</b> Area: '+area.toFixed(2)+'m². All walls used their entered or closure-inferred measurements. No sketch-scale guessing.</p>';
+  wallShapePreview.innerHTML='<p><b>Drawing scaled from measurements.</b> Missing walls estimated from sketch proportions. Estimated area: '+area.toFixed(2)+'m².</p>';
  }else{
   if(!w||!l||w<=0||l<=0){alert('Enter dimensions or draw a wall shape.');return;}
  }
