@@ -383,8 +383,51 @@ function drawWallShape(pts){let xs=pts.map(p=>p[0]),ys=pts.map(p=>p[1]),minX=Mat
 function preview(){const w=+drawWidth.value||0,l=+drawLength.value||0,sh=document.getElementById('simpleRoomShape');if(!w||!l){sh.style.width='80%';sh.style.height='150px';sh.textContent='Enter dimensions';drawArea.textContent='—';drawPerimeter.textContent='—';return;}let ratio=w/l,ww,hh;if(ratio>1){ww=90;hh=Math.max(25,90/ratio)}else{hh=90;ww=Math.max(25,90*ratio)}sh.style.width=ww+'%';sh.style.height=hh+'%';sh.textContent=(drawRoomName.value||'Room')+' '+w.toFixed(2)+' × '+l.toFixed(2)+'m';drawArea.textContent=(w*l).toFixed(2)+'m²';drawPerimeter.textContent=(2*(w+l)).toFixed(2)+'m'}
 ['drawWidth','drawLength','drawRoomName'].forEach(id=>document.getElementById(id).addEventListener('input',preview));preview();
 function render(){drawRooms.innerHTML=saved.map((r,i)=>'<div class="drawRoom"><b>'+esc(r.name)+'</b> '+r.w.toFixed(2)+' × '+r.l.toFixed(2)+'m = '+(r.area||r.w*r.l).toFixed(2)+'m² <button class="remove" data-i="'+i+'">Delete</button></div>').join('');drawRooms.querySelectorAll('[data-i]').forEach(b=>b.onclick=()=>{saved.splice(+b.dataset.i,1);render()})}
-drawSaveRoom.onclick=()=>{let w=+drawWidth.value,l=+drawLength.value,shape=null,area=null;if(drawMode.value==='walls'){if(!sketchFinished||!currentPolygon){alert('Draw the shape and press Finish drawing first.');return;}const entered=[...wallRows.querySelectorAll('.wallLen')].map(x=>x.value.trim()===''?null:+x.value);if(entered.length!==currentPolygon.length||entered.some(v=>v!==null&&(!v||v<=0))){alert('Measurements must be positive numbers or left blank.');return;}const sketchEdges=currentPolygon.map((p,i)=>Math.hypot(currentPolygon[(i+1)%currentPolygon.length][0]-p[0],currentPolygon[(i+1)%currentPolygon.length][1]-p[1]));const horizontal=entered.map((v,i)=>Math.abs(currentPolygon[(i+1)%currentPolygon.length][1]-currentPolygon[i][1])<4&&v!==null?v/sketchEdges[i]:null).filter(v=>v!==null);const vertical=entered.map((v,i)=>Math.abs(currentPolygon[(i+1)%currentPolygon.length][0]-currentPolygon[i][0])<4&&v!==null?v/sketchEdges[i]:null).filter(v=>v!==null);const fallback=entered.map((v,i)=>v===null?null:v/sketchEdges[i]).filter(v=>v!==null);const sx=horizontal.length?horizontal.reduce((a,b)=>a+b,0)/horizontal.length:(fallback.length?fallback.reduce((a,b)=>a+b,0)/fallback.length:1/100);const sy=vertical.length?vertical.reduce((a,b)=>a+b,0)/vertical.length:(fallback.length?fallback.reduce((a,b)=>a+b,0)/fallback.length:1/100);shape=currentPolygon.map(p=>[p[0]*sx,p[1]*sy]);w=Math.max(...shape.map(p=>p[0]));l=Math.max(...shape.map(p=>p[1]));area=polygonArea(shape);wallShapePreview.innerHTML='<p>Measurements saved. '+(entered.some(v=>v!==null)?'Missing walls estimated from the sketch scale. ':'No measurements entered — shown as a proportion-only estimate, not real metres. ')+'Estimated area: '+area.toFixed(2)+'m².</p>';}if(!w||!l){alert('Enter dimensions or draw a wall shape.');return;}saved.push({name:drawRoomName.value||'Room '+(saved.length+1),w,l,shape,area});drawRoomName.value='Room '+(saved.length+1);currentPolygon=null;render()};
-drawDeleteAll.onclick=()=>{saved.length=0;render()};
+drawSaveRoom.onclick=()=>{
+ let w=+drawWidth.value,l=+drawLength.value,shape=null,area=null,name=drawRoomName.value||'Room '+(saved.length+1);
+ if(drawMode.value==='walls'){
+  if(!sketchFinished||!currentPolygon){alert('Draw the shape and press Finish drawing first.');return;}
+  const pts=currentPolygon, entered=[...wallRows.querySelectorAll('.wallLen')].map(x=>x.value.trim()===''?null:+x.value);
+  if(entered.length!==pts.length||entered.some(v=>v!==null&&(!Number.isFinite(v)||v<=0))){alert('Enter valid positive wall measurements.');return;}
+  const edgeInfo=pts.map((p,i)=>{const q=pts[(i+1)%pts.length],dx=q[0]-p[0],dy=q[1]-p[1];if(Math.abs(dx)<4&&Math.abs(dy)<4)return null;return {axis:Math.abs(dx)>=Math.abs(dy)?'x':'y',dir:Math.abs(dx)>=Math.abs(dy)?Math.sign(dx):Math.sign(dy),pix:Math.abs(Math.abs(dx)>=Math.abs(dy)?dx:dy)};});
+  if(edgeInfo.some(e=>!e)){alert('The drawing has a very short or unclear wall. Please redraw it.');return;}
+  // Missing walls may only be inferred when exactly one wall is missing on that axis.
+  const lengths=[...entered];
+  for(const axis of ['x','y']){
+   const missing=lengths.map((v,i)=>v===null&&edgeInfo[i].axis===axis?i:-1).filter(i=>i>=0);
+   if(missing.length>1){alert('Cannot safely estimate '+missing.length+' missing '+axis.toUpperCase()+' walls. Enter each missing measurement.');return;}
+   if(missing.length===1){
+    const idx=missing[0],dir=edgeInfo[idx].dir;
+    const other=lengths.map((v,i)=>v!==null&&edgeInfo[i].axis===axis?{v,dir:edgeInfo[i].dir}:null).filter(Boolean);
+    const opposite=other.filter(o=>o.dir===-dir).reduce((s,o)=>s+o.v,0),same=other.filter(o=>o.dir===dir).reduce((s,o)=>s+o.v,0);
+    const inferred=opposite-same;
+    if(inferred<=0){alert('The missing '+axis.toUpperCase()+' wall cannot be inferred from the entered dimensions. Check the measurements.');return;}
+    lengths[idx]=inferred;
+   }
+  }
+  if(lengths.some(v=>v===null)){alert('Enter all wall measurements. Missing measurements could not be safely inferred.');return;}
+  // Reconstruct a dimensionally exact orthogonal polygon using the entered lengths and drawn directions.
+  shape=[[0,0]];
+  for(let i=0;i<pts.length;i++){
+   const e=edgeInfo[i],v=lengths[i],prev=shape[shape.length-1];
+   shape.push(e.axis==='x'?[prev[0]+e.dir*v,prev[1]]:[prev[0],prev[1]+e.dir*v]);
+  }
+  const close=shape[shape.length-1],err=Math.hypot(close[0],close[1]);
+  if(err>0.03){alert('The wall measurements do not close the drawing (gap '+err.toFixed(2)+'m). Check the dimensions before saving.');return;}
+  shape.pop();
+  // Normalize coordinates to positive space without changing wall lengths.
+  const minX=Math.min(...shape.map(p=>p[0])),minY=Math.min(...shape.map(p=>p[1]));
+  shape=shape.map(p=>[p[0]-minX,p[1]-minY]);
+  area=polygonArea(shape);w=Math.max(...shape.map(p=>p[0]));l=Math.max(...shape.map(p=>p[1]));
+  if(area<=0||w<=0||l<=0){alert('This drawing produces an invalid area. Redraw it.');return;}
+  currentPolygon=shape;
+  wallShapePreview.innerHTML='<p><b>Dimensions verified.</b> Area: '+area.toFixed(2)+'m². All walls used their entered or closure-inferred measurements. No sketch-scale guessing.</p>';
+ }else{
+  if(!w||!l||w<=0||l<=0){alert('Enter dimensions or draw a wall shape.');return;}
+ }
+ saved.push({name,w,l,shape,area,geometryVerified:!!shape});
+ drawRoomName.value='Room '+(saved.length+1);currentPolygon=null;render();
+};drawDeleteAll.onclick=()=>{saved.length=0;render()};
 function decomposeOrthogonalPolygon(poly){
  if(!poly||poly.length<3)return [];
  const xs=[...new Set(poly.map(p=>Number(p[0].toFixed(5))))].sort((a,b)=>a-b);
