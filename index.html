@@ -463,7 +463,7 @@ drawExport.onclick=()=>{
  if(!saved.length){alert('Save rooms and stairs first');return;}
  const cutItems=[];
  saved.forEach((r)=>{
-  const stairKind=/stair|bullnose|winder/i.test(r.kind||r.name);
+  const stairKind=/stair|bullnose|winder|half landing|1\/2 landing/i.test(r.kind||r.name);
   // Each stair is imported individually; its width is pile-direction locked.
   if(stairKind){cutItems.push({name:r.name,w:Number(r.w),l:Number(r.l),kind:r.kind||'Stair',fixedPile:true});return;}
   if(r.shape&&r.shape.length>=3){
@@ -494,7 +494,20 @@ calcStairs.onclick=()=>{let total=0,lines=[];let q=+stairQty.value||0,w=+stairWi
 printStairs.onclick=()=>{if(!stairsResult.innerText){alert('Calculate first');return;}let win=window.open('','_blank');if(win){win.document.write('<h1>Stairs cutting sheet</h1>'+stairsResult.innerHTML);win.document.close();win.print()}};
 document.getElementById("bullnoseEnabled").onchange=()=>document.getElementById("bullnoseQty").disabled=!document.getElementById("bullnoseEnabled").checked;
 document.getElementById("addWinder").onclick=()=>{const row=document.createElement("div");row.className="drawRoom";row.innerHTML="<b>Winder</b><div class='grid'><div><label>Width (m)</label><input class='ww' type='number' step='.01'></div><div><label>Cut length (m)</label><input class='wl' type='number' step='.01'></div></div><button type='button' class='remove'>Remove</button>";row.querySelector("button").onclick=()=>row.remove();document.getElementById("winderRows").appendChild(row)};
-document.getElementById("saveStairs").onclick=()=>{let q=+stairQty.value||0,w=+stairWidth.value||0,l=+stairLength.value||0,bq=bullnoseEnabled.checked?(+bullnoseQty.value||0):0,bw=+bullnoseWidth.value||0,bl=+bullnoseLength.value||0,n=0;if(q>0&&w>0&&l>0){for(let i=0;i<q;i++){saved.push({name:"Stair "+(i+1),w,l,kind:"Standard stair",fixedPile:true,area:w*l});n++}}else if(q>0){alert("Enter both the stair width and cut length before saving.");return}if(bq>0&&bw>0&&bl>0){for(let i=0;i<bq;i++){saved.push({name:"Bullnose "+(i+1),w:bw,l:bl,kind:"Bullnose",fixedPile:true,area:bw*bl});n++}}else if(bq>0){alert("Enter bullnose width and cut length before saving.");return}document.querySelectorAll("#winderRows .drawRoom").forEach((r,i)=>{let ww=+r.querySelector(".ww").value||0,ll=+r.querySelector(".wl").value||0;if(ww>0&&ll>0){saved.push({name:"Winder "+(i+1),w:ww,l:ll,kind:"Winder",fixedPile:true,area:ww*ll});n++}});if(!n){alert("Enter stair quantities and sizes first.");return}document.getElementById("stairsSummary").textContent=n+" stair cuts added to the combined site plan.";render();};
+document.getElementById("saveStairs").onclick=function(){
+ const q=Number(document.getElementById("stairQty").value)||0,w=Number(document.getElementById("stairWidth").value)||0,l=Number(document.getElementById("stairLength").value)||0;
+ const bull=document.getElementById("bullnoseEnabled").checked,bq=bull?(Number(document.getElementById("bullnoseQty").value)||0):0,bw=Number(document.getElementById("bullnoseWidth").value)||0,bl=Number(document.getElementById("bullnoseLength").value)||0;
+ const target=document.getElementById("stairsSummary");let added=0;
+ if(q>0&&(!w||!l)){alert("Enter both stair width and cut length before saving.");return}
+ if(bq>0&&(!bw||!bl)){alert("Enter bullnose width and cut length before saving.");return}
+ for(let i=0;i<q;i++){saved.push({name:"Stair "+(i+1),w,l,kind:"Standard stair",fixedPile:true,area:w*l});added++}
+ for(let i=0;i<bq;i++){saved.push({name:"Bullnose "+(i+1),w:bw,l:bl,kind:"Bullnose",fixedPile:true,area:bw*bl});added++}
+ document.querySelectorAll("#winderRows .drawRoom").forEach((row,i)=>{const ww=Number(row.querySelector(".ww").value)||0,ll=Number(row.querySelector(".wl").value)||0;if(ww>0&&ll>0){saved.push({name:"Winder "+(i+1),w:ww,l:ll,kind:"Winder",fixedPile:true,area:ww*ll});added++}});
+ if(!added){alert("Enter stair quantities and sizes first.");return}
+ target.textContent="SUCCESS: "+added+" stair cuts saved. Site plan now contains "+saved.length+" total pieces.";
+ render();
+ alert(added+" stair cuts saved to the site plan. You should now see each Stair, Bullnose and Winder listed below.");
+};
 
 // CWF drawing extension: multiple half-landings and odd-shaped cuts.
 const landingRows=document.getElementById('landingRows'),oddPieceRows=document.getElementById('oddPieceRows');
