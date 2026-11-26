@@ -98,7 +98,7 @@ document.getElementById('calc').onclick=()=>{
  const standardPlates=Math.max(0,Math.floor(Number(document.getElementById('standardPlates').value)||0));
  const specialPlates=Math.max(0,Math.floor(Number(document.getElementById('specialPlates').value)||0));
  const stairsEnabled=document.getElementById('stairsEnabled').checked, hallEnabled=document.getElementById('hallEnabled').checked, wrapStairsEnabled=document.getElementById('wrapStairsEnabled').checked, doubleStairsEnabled=document.getElementById('doubleStairsEnabled').checked;
- const raw=[...list.querySelectorAll('.room')].map((r,i)=>{const name=r.querySelector('.name').value.trim()||'Room '+(i+1);const fixed=/\b(Landing|Stair|Bullnose|Winder|Cut)\b/i.test(name);return {name,w:Number(r.querySelector('.w').value),l:Number(r.querySelector('.l').value),index:i,fixedPile:fixed};}).filter(r=>r.w>0&&r.l>0);
+ const raw=[...list.querySelectorAll('.room')].map((r,i)=>{const name=r.querySelector('.name').value.trim()||'Room '+(i+1);const fixed=r.dataset.cwfFixedPile==='true'||/\b(Landing|Stair|Bullnose|Winder)\b/i.test(name);return {name,w:Number(r.querySelector('.w').value),l:Number(r.querySelector('.l').value),index:i,fixedPile:fixed,kind:r.dataset.cwfKind||''};}).filter(r=>r.w>0&&r.l>0);
  if(!raw.length){alert('Enter at least one room with valid measurements.');return}
  function makePlan(roll){
    const valid=raw.filter(r=>Math.min(r.w,r.l)<=roll+0.00001);
@@ -382,7 +382,7 @@ function polygonArea(pts){let a=0;for(let i=0;i<pts.length;i++){let p=pts[i],q=p
 function drawWallShape(pts){let xs=pts.map(p=>p[0]),ys=pts.map(p=>p[1]),minX=Math.min(...xs),maxX=Math.max(...xs),minY=Math.min(...ys),maxY=Math.max(...ys),w=maxX-minX,h=maxY-minY,scale=Math.min(300/(w||1),190/(h||1)),pad=30,coords=pts.map(p=>[(p[0]-minX)*scale+pad,(p[1]-minY)*scale+pad]),path=coords.map((p,i)=>(i?'L':'M')+p[0]+','+p[1]).join(' ')+' Z',labels=coords.map((p,i)=>{let q=coords[(i+1)%coords.length],mx=(p[0]+q[0])/2,my=(p[1]+q[1])/2,dist=Math.hypot(q[0]-p[0],q[1]-p[1]);return '<text x="'+mx+'" y="'+(my-7)+'" fill="#d7b56d" font-size="12" text-anchor="middle">'+(dist/scale).toFixed(2)+'m</text>'}).join('');wallShapePreview.innerHTML='<svg viewBox="0 0 '+(w*scale+pad*2)+' '+(h*scale+pad*2)+'" width="100%" style="max-height:260px"><path d="'+path+'" fill="#d7b56d33" stroke="#d7b56d" stroke-width="3"/>'+labels+'</svg>';currentPolygon=pts.map(p=>[p[0]-minX,p[1]-minY]);drawArea.textContent=polygonArea(currentPolygon).toFixed(2)+'m² (sketch estimate)';drawPerimeter.textContent='Enter wall measurements';}
 function preview(){const w=+drawWidth.value||0,l=+drawLength.value||0,sh=document.getElementById('simpleRoomShape');if(!w||!l){sh.style.width='80%';sh.style.height='150px';sh.textContent='Enter dimensions';drawArea.textContent='—';drawPerimeter.textContent='—';return;}let ratio=w/l,ww,hh;if(ratio>1){ww=90;hh=Math.max(25,90/ratio)}else{hh=90;ww=Math.max(25,90*ratio)}sh.style.width=ww+'%';sh.style.height=hh+'%';sh.textContent=(drawRoomName.value||'Room')+' '+w.toFixed(2)+' × '+l.toFixed(2)+'m';drawArea.textContent=(w*l).toFixed(2)+'m²';drawPerimeter.textContent=(2*(w+l)).toFixed(2)+'m'}
 ['drawWidth','drawLength','drawRoomName'].forEach(id=>document.getElementById(id).addEventListener('input',preview));preview();
-function render(){drawRooms.innerHTML=saved.map((r,i)=>'<div class="drawRoom"><b>'+esc(r.name)+'</b> '+r.w.toFixed(2)+' × '+r.l.toFixed(2)+'m = '+(r.area||r.w*r.l).toFixed(2)+'m² <button class="remove" data-i="'+i+'">Delete</button></div>').join('');drawRooms.querySelectorAll('[data-i]').forEach(b=>b.onclick=()=>{saved.splice(+b.dataset.i,1);render()})}
+function render(){drawRooms.innerHTML=saved.map((r,i)=>'<div class="drawRoom"><b>'+esc(r.name)+'</b> <span class="muted">'+esc(r.kind||'Room')+'</span> '+r.w.toFixed(2)+' × '+r.l.toFixed(2)+'m = '+(r.area||r.w*r.l).toFixed(2)+'m²'+(r.fixedPile||/stair|bullnose|winder/i.test(r.kind||r.name)?'<br><b>PILE DIRECTION LOCKED — cannot rotate</b>':'')+(r.shape&&r.shape.length?' · drawn shape saved':'')+' <button class="remove" data-i="'+i+'">Delete</button></div>').join('');drawRooms.querySelectorAll('[data-i]').forEach(b=>b.onclick=()=>{saved.splice(+b.dataset.i,1);render()})}
 drawSaveRoom.onclick=()=>{
  let w=+drawWidth.value,l=+drawLength.value,shape=null,area=null,name=drawRoomName.value||'Room '+(saved.length+1);
  if(drawMode.value==='walls'){
@@ -464,7 +464,7 @@ drawExport.onclick=()=>{
   if(stairKind){cutItems.push({name:r.name,w:Number(r.w),l:Number(r.l),kind:r.kind||'Stair',fixedPile:true});return;}
   if(r.shape&&r.shape.length>=3){
    const parts=decomposeOrthogonalPolygon(r.shape);
-   if(parts.length)parts.forEach((p,i)=>cutItems.push({name:(/landing|site drawing|shape/i.test(r.name)?'Landing':r.name)+' - Cut '+(i+1),w:p.w,l:p.l,kind:'Shape cut',fixedPile:true,sourceShape:r.name,shapeCutIndex:i+1}));
+   if(parts.length)parts.forEach((p,i)=>cutItems.push({name:(/landing|site drawing|shape/i.test(r.name)?'Landing':r.name)+' - Cut '+(i+1),w:p.w,l:p.l,kind:'Shape cut',fixedPile:true,kind:'Landing/shape cut',sourceShape:r.name,shapeCutIndex:i+1}));
    else cutItems.push({name:r.name,w:Number(r.w),l:Number(r.l),kind:r.kind||'Room'});
   }else cutItems.push({name:r.name,w:Number(r.w),l:Number(r.l),kind:r.kind||'Room'});
  });
@@ -474,6 +474,8 @@ drawExport.onclick=()=>{
   row.querySelector('.name').value=item.name;
   row.querySelector('.w').value=item.w.toFixed(2);
   row.querySelector('.l').value=item.l.toFixed(2);
+  row.dataset.cwfFixedPile=item.fixedPile?'true':'false';
+  row.dataset.cwfKind=item.kind||'';
   row.querySelectorAll('input').forEach(x=>x.removeAttribute('readonly'));
  });
  showPage('carpet');
@@ -488,6 +490,6 @@ calcStairs.onclick=()=>{let total=0,lines=[];let q=+stairQty.value||0,w=+stairWi
 printStairs.onclick=()=>{if(!stairsResult.innerText){alert('Calculate first');return;}let win=window.open('','_blank');if(win){win.document.write('<h1>Stairs cutting sheet</h1>'+stairsResult.innerHTML);win.document.close();win.print()}};
 document.getElementById("bullnoseEnabled").onchange=()=>document.getElementById("bullnoseQty").disabled=!document.getElementById("bullnoseEnabled").checked;
 document.getElementById("addWinder").onclick=()=>{const row=document.createElement("div");row.className="drawRoom";row.innerHTML="<b>Winder</b><div class='grid'><div><label>Width (m)</label><input class='ww' type='number' step='.01'></div><div><label>Cut length (m)</label><input class='wl' type='number' step='.01'></div></div><button type='button' class='remove'>Remove</button>";row.querySelector("button").onclick=()=>row.remove();document.getElementById("winderRows").appendChild(row)};
-document.getElementById("saveStairs").onclick=()=>{let q=+stairQty.value||0,w=+stairWidth.value||0,l=+stairLength.value||0,bq=bullnoseEnabled.checked?(+bullnoseQty.value||0):0,bw=+bullnoseWidth.value||0,bl=+bullnoseLength.value||0,n=0;if(q&&w&&l){for(let i=0;i<q;i++){saved.push({name:"Stair "+(i+1),w,l,kind:"Standard stair"});n++}}if(bq&&bw&&bl){for(let i=0;i<bq;i++){saved.push({name:"Bullnose "+(i+1),w:bw,l:bl,kind:"Bullnose"});n++}}document.querySelectorAll("#winderRows .drawRoom").forEach((r,i)=>{let ww=+r.querySelector(".ww").value||0,ll=+r.querySelector(".wl").value||0;if(ww&&ll){saved.push({name:"Winder "+(i+1),w:ww,l:ll,kind:"Winder"});n++}});if(!n){alert("Enter stair quantities and sizes first.");return}document.getElementById("stairsSummary").textContent=n+" stair cuts added to the combined site plan.";render();};
+document.getElementById("saveStairs").onclick=()=>{let q=+stairQty.value||0,w=+stairWidth.value||0,l=+stairLength.value||0,bq=bullnoseEnabled.checked?(+bullnoseQty.value||0):0,bw=+bullnoseWidth.value||0,bl=+bullnoseLength.value||0,n=0;if(q>0&&w>0&&l>0){for(let i=0;i<q;i++){saved.push({name:"Stair "+(i+1),w,l,kind:"Standard stair",fixedPile:true,area:w*l});n++}}else if(q>0){alert("Enter both the stair width and cut length before saving.");return}if(bq>0&&bw>0&&bl>0){for(let i=0;i<bq;i++){saved.push({name:"Bullnose "+(i+1),w:bw,l:bl,kind:"Bullnose",fixedPile:true,area:bw*bl});n++}}else if(bq>0){alert("Enter bullnose width and cut length before saving.");return}document.querySelectorAll("#winderRows .drawRoom").forEach((r,i)=>{let ww=+r.querySelector(".ww").value||0,ll=+r.querySelector(".wl").value||0;if(ww>0&&ll>0){saved.push({name:"Winder "+(i+1),w:ww,l:ll,kind:"Winder",fixedPile:true,area:ww*ll});n++}});if(!n){alert("Enter stair quantities and sizes first.");return}document.getElementById("stairsSummary").textContent=n+" stair cuts added to the combined site plan.";render();};
 })();</script>
 </body></html>
