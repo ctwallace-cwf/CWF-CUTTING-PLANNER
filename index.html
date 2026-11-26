@@ -123,8 +123,8 @@ document.getElementById('calc').onclick=()=>{
          for(const o of opts){
            if(o.across<=roll-sh.used+0.00001){
              const next=current.map(x=>({height:x.height,used:x.used,items:[...x.items]}));
-             next[si].height=Math.max(next[si].height,o.run);next[si].used+=o.across;
-             next[si].items.push({...room,...o});searchPacking(pos+1,next);
+             next[si].height=Math.max(next[si].height,o.run);const acrossStart=next[si].used;next[si].used+=o.across;
+             next[si].items.push({...room,...o,acrossStart});searchPacking(pos+1,next);
            }
          }
        }
