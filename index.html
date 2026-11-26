@@ -18,7 +18,7 @@ nav{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0}nav button{flex:1;min-widt
 <div><label>Standard doorplates (£5 each)</label><input id="standardPlates" type="number" min="0" step="1" placeholder=""></div>
 <div><label>Special doorplates (£15 each)</label><input id="specialPlates" type="number" min="0" step="1" placeholder=""></div>
 </div></section>
-<nav class="no-print" id="pageNav"><button type="button" onclick="showPage('carpet')">Carpet</button><button type="button" onclick="showPage('drawing')">Site Drawing</button><button type="button" onclick="showPage('vinyl')">Vinyl</button><button type="button" onclick="showPage('laminate')">Laminate</button><button type="button" onclick="showPage('lvt')">LVT</button><button type="button" onclick="showPage('prep')">Screed / DPM / Glue</button><button type="button" onclick="showPage('contracts')">Contract flooring</button><button type="button" onclick="showPage('tiles')">Carpet tiles</button><button type="button" onclick="showPage('uplift')">Uplift / Removal</button></nav>
+<nav class="no-print" id="pageNav"><button type="button" data-page-target="carpet" onclick="document.querySelectorAll('.page').forEach(p=>p.hidden=true);document.getElementById('page-carpet').hidden=false;window.scrollTo(0,0)">Carpet</button><button type="button" data-page-target="drawing" onclick="document.querySelectorAll('.page').forEach(p=>p.hidden=true);document.getElementById('page-drawing').hidden=false;window.scrollTo(0,0)">Site Drawing</button><button type="button" data-page-target="vinyl" onclick="document.querySelectorAll('.page').forEach(p=>p.hidden=true);document.getElementById('page-vinyl').hidden=false;window.scrollTo(0,0)">Vinyl</button><button type="button" data-page-target="laminate" onclick="document.querySelectorAll('.page').forEach(p=>p.hidden=true);document.getElementById('page-laminate').hidden=false;window.scrollTo(0,0)">Laminate</button><button type="button" data-page-target="lvt" onclick="document.querySelectorAll('.page').forEach(p=>p.hidden=true);document.getElementById('page-lvt').hidden=false;window.scrollTo(0,0)">LVT</button><button type="button" data-page-target="prep" onclick="document.querySelectorAll('.page').forEach(p=>p.hidden=true);document.getElementById('page-prep').hidden=false;window.scrollTo(0,0)">Screed / DPM / Glue</button><button type="button" data-page-target="contracts" onclick="document.querySelectorAll('.page').forEach(p=>p.hidden=true);document.getElementById('page-contracts').hidden=false;window.scrollTo(0,0)">Contract flooring</button><button type="button" data-page-target="tiles" onclick="document.querySelectorAll('.page').forEach(p=>p.hidden=true);document.getElementById('page-tiles').hidden=false;window.scrollTo(0,0)">Carpet tiles</button><button type="button" data-page-target="uplift" onclick="document.querySelectorAll('.page').forEach(p=>p.hidden=true);document.getElementById('page-uplift').hidden=false;window.scrollTo(0,0)">Uplift / Removal</button></nav>
 <div id="page-carpet" class="page">
 <section class="card"><h2>Carpet selection</h2><div class="grid"><div><label>Roll width selection</label><input value="Automatic (4m or 5m)" disabled></div>
 <div><label>Carpet price per m² (£)</label><input id="price" type="number" min="0" step=".01" placeholder="0.00"></div>
@@ -229,16 +229,6 @@ const fittingTotals={carpet:0,vinyl:0,laminate:0,lvt:0,uplift:0};
 const quoteLabels={carpet:'Carpet',vinyl:'Vinyl',laminate:'Laminate',lvt:'LVT',prep:'Screed / DPM / Glue',uplift:'Uplift / removal'};
 function showPage(name){document.querySelectorAll('.page').forEach(p=>p.hidden=true);document.getElementById('page-'+name).hidden=false;const buttonLabels={carpet:'Carpet',drawing:'Site Drawing',vinyl:'Vinyl',laminate:'Laminate',lvt:'LVT',prep:'Screed / DPM / Glue',contracts:'Contract flooring',tiles:'Carpet tiles',uplift:'Uplift / Removal'};document.getElementById('pageNav').querySelectorAll('button').forEach(b=>b.style.background=b.textContent.trim()===buttonLabels[name]?'#d7b56d':'#171717');if(name==='quote')renderQuote();if(name==='drawing'&&window.resizeDrawingCanvas)window.resizeDrawingCanvas();window.scrollTo(0,0)}
 window.showPage=showPage;
-document.addEventListener('DOMContentLoaded',()=>{
- const nav=document.getElementById('pageNav');
- if(!nav)return;
- nav.querySelectorAll('button').forEach((b,i)=>{
-  const names=['carpet','drawing','vinyl','laminate','lvt','prep','contracts','tiles','uplift'];
-  b.setAttribute('data-page-target',names[i]||'carpet');
-  b.addEventListener('touchend',e=>{e.preventDefault();showPage(b.dataset.pageTarget);},{passive:false});
-  b.addEventListener('click',e=>{e.preventDefault();showPage(b.dataset.pageTarget);});
- });
-});
 
 function addMeasureRoom(containerId){
  const list=document.getElementById(containerId);
