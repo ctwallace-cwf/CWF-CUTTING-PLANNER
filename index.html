@@ -117,7 +117,7 @@ document.getElementById('calc').onclick=()=>{
          return;
        }
        const room=sorted[pos];
-       const opts=(room.fixedPile?[{across:room.w,run:room.l,rotated:false}]:[{across:room.w,run:room.l,rotated:false},{across:room.l,run:room.w,rotated:true}]).filter(o=>o.across<=roll+0.00001);
+       const opts=(room.shape&&room.shape.length>=3?[{across:room.w,run:room.l,rotated:false,shape:room.shape},{across:room.l,run:room.w,rotated:true,shape:room.shape.map(p=>[p[1],p[0]])}]:room.fixedPile?[{across:room.w,run:room.l,rotated:false}]:[{across:room.w,run:room.l,rotated:false},{across:room.l,run:room.w,rotated:true}]).filter(o=>o.across<=roll+0.00001);
        for(let si=0;si<current.length;si++){
          const sh=current[si];
          for(const o of opts){
@@ -136,7 +136,7 @@ document.getElementById('calc').onclick=()=>{
      searchPacking(0,[]);shelves=bestShelves||[];
    }else{
      for(const room of sorted){
-       const opts=(room.fixedPile?[{across:room.w,run:room.l,rotated:false}]:[{across:room.w,run:room.l,rotated:false},{across:room.l,run:room.w,rotated:true}]).filter(o=>o.across<=roll+0.00001);
+       const opts=(room.shape&&room.shape.length>=3?[{across:room.w,run:room.l,rotated:false,shape:room.shape},{across:room.l,run:room.w,rotated:true,shape:room.shape.map(p=>[p[1],p[0]])}]:room.fixedPile?[{across:room.w,run:room.l,rotated:false}]:[{across:room.w,run:room.l,rotated:false},{across:room.l,run:room.w,rotated:true}]).filter(o=>o.across<=roll+0.00001);
        let best=null;
        for(let si=0;si<shelves.length;si++)for(const o of opts){
          const sh=shelves[si];if(o.across<=roll-sh.used+0.00001){
@@ -200,7 +200,7 @@ document.getElementById('calc').onclick=()=>{
  const plan=plans[0],roll=plan.roll,shelves=plan.shelves,placed=plan.placed,total=plan.total;
  const placedByIndex=new Map();placed.forEach(r=>{(r.indices||[r.index]).forEach(idx=>placedByIndex.set(idx,r));});
  const rows=raw.map(r=>{const p=placedByIndex.get(r.index);return p?{...p,ok:true}:{...r,ok:false}});
- const invalid=rows.filter(r=>!r.ok);
+ const invalid=rows.filter(r=>!r.ok); if(!shelves.length){document.getElementById('layout').innerHTML='<p class="notice">No pieces could be placed on either roll. At least one drawn shape may be wider or longer than the available roll. Check its measured dimensions and pile direction.</p>';}
  document.getElementById('result').hidden=false;
  document.getElementById('metres').textContent=total.toFixed(2)+' m';
  document.getElementById('supplied').textContent=plan.supplied.toFixed(2)+' m²';
