@@ -211,8 +211,7 @@ document.getElementById('calc').onclick=()=>{
  const plateCost=standardPlates*5+specialPlates*15;
  const grandTotal=carpetCost+underlayCost+plateCost;
  window.cwfCarpetQuoteLines=[{label:'Carpet',amount:'£'+carpetCost.toFixed(2)}];if(underlayEnabled)window.cwfCarpetQuoteLines.push({label:'Underlay',amount:'£'+underlayCost.toFixed(2)});if(standardPlates)window.cwfCarpetQuoteLines.push({label:'Standard doorplates ('+standardPlates+')',amount:'£'+(standardPlates*5).toFixed(2)});if(specialPlates)window.cwfCarpetQuoteLines.push({label:'Special doorplates ('+specialPlates+')',amount:'£'+(specialPlates*15).toFixed(2)});
- const fittingGroups=new Map();raw.forEach(r=>{if(/^(Stair|Bullnose|Winder|1\/2 Landing|Half landing)\b/i.test(r.name))return;const groupName=r.name.replace(/\s+-\s+Cut\s+\d+$/i,'');const g=fittingGroups.get(groupName)||{name:groupName,area:0};g.area+=r.w*r.l;fittingGroups.set(groupName,g);});const roomFitting=[...fittingGroups.values()].map(r=>({...r,charge:Math.max(60,r.area*5)}));
- const baseRoomFitting=roomFitting.reduce((sum,r)=>sum+r.charge,0); const fittingCost=baseRoomFitting+(hallEnabled?30:0)+(wrapStairsEnabled?100:0)+(doubleStairsEnabled?80:0)+(stairsEnabled?Math.max(50,100-baseRoomFitting):0);
+ const fittingMaterialArea=plan.supplied; const fittingRate=5; const baseRoomFitting=Math.max(60,fittingMaterialArea*fittingRate); const fittingCost=baseRoomFitting+(hallEnabled?30:0)+(wrapStairsEnabled?100:0)+(doubleStairsEnabled?80:0)+(stairsEnabled?Math.max(50,100-baseRoomFitting):0);
  const jobTotal=grandTotal+fittingCost;
  quoteTotals.carpet=jobTotal; fittingTotals.carpet=fittingCost;
  document.getElementById('cost').textContent='£'+carpetCost.toFixed(2);
