@@ -151,7 +151,22 @@ document.getElementById('calc').onclick=()=>{
    let placed=shelves.flatMap(s=>s.items);
    function shapeOffcuts(poly,bw,bl){if(!poly||poly.length<3)return [];const xs=[0,bw,...poly.map(p=>Math.max(0,Math.min(bw,p[0])))].sort((a,b)=>a-b).filter((v,i,a)=>i===0||Math.abs(v-a[i-1])>1e-5),rects=[];for(let i=0;i<xs.length-1;i++){const x1=xs[i],x2=xs[i+1],xm=(x1+x2)/2;if(x2-x1<1e-5)continue;const ys=[];for(let j=0;j<poly.length;j++){const a=poly[j],b=poly[(j+1)%poly.length];if((a[0]<=xm&&b[0]>xm)||(b[0]<=xm&&a[0]>xm))ys.push(a[1]+(xm-a[0])*(b[1]-a[1])/(b[0]-a[0]));}ys.sort((a,b)=>a-b);let inside=[],cursor=0;for(let k=0;k+1<ys.length;k+=2)inside.push([ys[k],ys[k+1]]);let gaps=[];inside.forEach(([lo,hi])=>{lo=Math.max(0,lo);hi=Math.min(bl,hi);if(lo>cursor+1e-5)gaps.push([cursor,lo]);cursor=Math.max(cursor,hi);});if(cursor<bl-1e-5)gaps.push([cursor,bl]);gaps.forEach(([y1,y2])=>{const found=rects.find(r=>Math.abs(r.x2-x1)<1e-5&&Math.abs(r.y1-y1)<1e-5&&Math.abs(r.y2-y2)<1e-5);if(found)found.x2=x2;else rects.push({x1,x2,y1,y2});});}return rects.map(r=>({x:r.x1,y:r.y1,w:r.x2-r.x1,l:r.y2-r.y1})).filter(r=>r.w>.02&&r.l>.02);}
    const nestedIds=new Set();
-   placed.filter(p=>p.shape&&p.shape.length>=3).forEach(landing=>{landing.nested=[];shapeOffcuts(landing.shape,landing.w,landing.l).forEach(off=>{placed.filter(p=>/^(Stair|Bullnose|Winder)\b/i.test(p.name)&&!nestedIds.has(p.index)&&p.fixedPile).forEach(stair=>{if(stair.w<=off.w+1e-5&&stair.l<=off.l+1e-5){const nx=Math.floor((off.w+1e-5)/stair.w),ny=Math.floor((off.l+1e-5)/stair.l);for(let y=0;y<ny&&!nestedIds.has(stair.index);y++)for(let x=0;x<nx&&!nestedIds.has(stair.index);x++){nestedIds.add(stair.index);landing.nested.push({name:stair.name,w:stair.w,l:stair.l,x:off.x+x*stair.w,y:off.y+y*stair.l,index:stair.index});}});});});
+   placed.filter(p=>p.shape&&p.shape.length>=3).forEach(landing=>{
+     landing.nested=[];
+     shapeOffcuts(landing.shape,landing.w,landing.l).forEach(off=>{
+       placed.filter(p=>/^(Stair|Bullnose|Winder)\b/i.test(p.name)&&!nestedIds.has(p.index)&&p.fixedPile).forEach(stair=>{
+         if(stair.w<=off.w+1e-5&&stair.l<=off.l+1e-5){
+           const nx=Math.floor((off.w+1e-5)/stair.w),ny=Math.floor((off.l+1e-5)/stair.l);
+           for(let y=0;y<ny&&!nestedIds.has(stair.index);y++){
+             for(let x=0;x<nx&&!nestedIds.has(stair.index);x++){
+               nestedIds.add(stair.index);
+               landing.nested.push({name:stair.name,w:stair.w,l:stair.l,x:off.x+x*stair.w,y:off.y+y*stair.l,index:stair.index});
+             }
+           }
+         }
+       });
+     });
+   });
    if(nestedIds.size){shelves.forEach(sh=>{sh.items=sh.items.filter(x=>!nestedIds.has(x.index));let cursor=0;sh.items.forEach(x=>{x.acrossStart=cursor;cursor+=x.across;});sh.used=cursor;sh.height=sh.items.reduce((h,x)=>Math.max(h,x.run),0);});shelves=shelves.filter(sh=>sh.items.length);placed=placed.filter(p=>!nestedIds.has(p.index));placed.push(...raw.filter(p=>nestedIds.has(p.index)).map(p=>({...p,nestedInto:placed.find(l=>l.nested&&l.nested.some(n=>n.index===p.index))?.index})));}
    // Remaining ordinary stairs are grouped into strips of five. Any stairs
    // already nested into landing offcuts remain individual pieces.
