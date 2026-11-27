@@ -199,8 +199,9 @@ document.getElementById('calc').onclick=()=>{ const __layoutDiag=document.getEle
  });
  const plan=plans[0],roll=plan.roll,shelves=plan.shelves,placed=plan.placed,total=plan.total;
  const placedByIndex=new Map();placed.forEach(r=>{(r.indices||[r.index]).forEach(idx=>placedByIndex.set(idx,r));});
- const nestedIndexSet=new Set(plan.nestedIndexes||[]);
- const rows=raw.map(r=>{const p=placedByIndex.get(r.index);if(p)return {...p,ok:true};if(nestedIndexSet.has(r.index))return {...r,ok:true,nested:true};return {...r,ok:false};});
+ const nestedIndexSet=new Set([...(plan.nestedIndexes||[]),...placed.filter(p=>p.nestedInto!==undefined).map(p=>p.index),...shelves.flatMap(sh=>sh.items.flatMap(x=>(x.nested||[]).map(n=>n.index))) ]);
+ const nestedNameSet=new Set(shelves.flatMap(sh=>sh.items.flatMap(x=>(x.nested||[]).map(n=>String(n.name||'').trim().toLowerCase()))));
+ const rows=raw.map(r=>{const p=placedByIndex.get(r.index);if(p)return {...p,ok:true};if(nestedIndexSet.has(r.index)||nestedNameSet.has(String(r.name||'').trim().toLowerCase()))return {...r,ok:true,nested:true};return {...r,ok:false};});
  const invalid=rows.filter(r=>!r.ok); if(!shelves.length){document.getElementById('layout').innerHTML='<p class="notice">No pieces could be placed on either roll. At least one drawn shape may be wider or longer than the available roll. Check its measured dimensions and pile direction.</p>';}
  document.getElementById('result').hidden=false;
  document.getElementById('metres').textContent=total.toFixed(2)+' m';
