@@ -225,28 +225,27 @@ document.getElementById('calc').onclick=()=>{
  const job=esc(document.getElementById('customer').value||'CWF job'),date=esc(document.getElementById('date').value||'');
  document.getElementById('cuts').innerHTML='<p><b>'+job+'</b> · '+date+' · Recommended '+roll+'m roll</p>'+rows.map((r,i)=>'<div class="line"><b>'+(i+1)+'. '+esc(r.name)+'</b><br>'+(r.ok?r.across.toFixed(2)+'m across × '+r.run.toFixed(2)+'m long':'<span style="color:#a33">Does not fit either roll width</span>')+'</div>').join('')+'<p><b>Total roll length: '+total.toFixed(2)+' linear metres on '+roll+'m roll</b></p>';
  function renderRollLayout(p){
-  if(!p||!Array.isArray(p.shelves))return '<div class="notice">Layout data unavailable for this roll.</div>';
-  let out='<section class="card"><h3>'+p.roll+'m roll · '+Number(p.total||0).toFixed(2)+' linear metres</h3>';
-  if(!p.shelves.length)return out+'<p>No cuts could be placed on this roll width.</p></section>';
-  const efficiency=p.supplied?100*(p.area||0)/p.supplied:0;
-  out+='<div class="stats"><div class="stat"><span class="muted">Supplied</span><b>'+Number(p.supplied||0).toFixed(2)+'m²</b></div><div class="stat"><span class="muted">Cut area</span><b>'+Number(p.area||0).toFixed(2)+'m²</b></div><div class="stat"><span class="muted">Waste</span><b>'+Number(p.waste||0).toFixed(2)+'m²</b></div><div class="stat"><span class="muted">Efficiency</span><b>'+efficiency.toFixed(1)+'%</b></div></div>';
-  p.shelves.forEach((sh,i)=>{
-   const roll=Math.max(.1,Number(p.roll)||4),length=Math.max(.1,Number(sh.height)||.1);
-   out+='<div class="shelf"><b>Section '+(i+1)+' · '+length.toFixed(2)+'m long</b><div style="position:relative;width:100%;height:220px;overflow:hidden;background:#f1f1ed;border:2px solid #333;margin-top:8px">';
-   (Array.isArray(sh.items)?sh.items:[]).forEach(x=>{
-    const across=Math.max(0,Number(x.across)||Number(x.w)||0),run=Math.max(0,Number(x.run)||Number(x.l)||0),startAcross=Math.max(0,Number(x.acrossStart)||0);
-    const left=Math.min(100,startAcross/roll*100),width=Math.max(0,Math.min(100-left,across/roll*100)),height=Math.max(0,Math.min(100,run/length*100));
-    if(width>0&&height>0)out+='<div style="position:absolute;left:'+left+'%;top:0;width:'+width+'%;height:'+height+'%;background:#d7b56d;border:2px solid #80652d;box-sizing:border-box;display:flex;align-items:center;justify-content:center;text-align:center;font-size:11px;color:#222;overflow:hidden;padding:2px"><b>'+esc(String(x.name||'Cut'))+'<br>'+across.toFixed(2)+' × '+run.toFixed(2)+'m</b></div>';
-    (Array.isArray(x.nested)?x.nested:[]).forEach(n=>{const nl=left+(Number(n.x)||0)/roll*100,nw=(Number(n.w)||0)/roll*100,nh=(Number(n.l)||0)/length*100,nt=(Number(n.y)||0)/length*100;if(nw>0&&nh>0)out+='<div style="position:absolute;left:'+nl+'%;top:'+nt+'%;width:'+nw+'%;height:'+nh+'%;background:#f5e6bd;border:1px solid #473719;box-sizing:border-box;overflow:hidden;font-size:9px;text-align:center">'+esc(String(n.name||'Stair'))+'</div>';});
+  if(!p)return '<div class="notice">Roll plan missing.</div>';
+  const rollWidth=Number(p.roll)||4,sections=Array.isArray(p.shelves)?p.shelves:[];
+  let out='<section class="card" style="margin:12px 0;padding:12px"><h3>'+rollWidth+'m roll · '+Number(p.total||0).toFixed(2)+' linear metres</h3><p><b>Sections:</b> '+sections.length+' · <b>Pieces placed:</b> '+sections.reduce((n,s)=>n+(Array.isArray(s.items)?s.items.length:0),0)+'</p>';
+  if(!sections.length)return out+'<p>No cuts placed on this roll.</p></section>';
+  sections.forEach((sh,i)=>{
+   const length=Math.max(.01,Number(sh.height)||.01),items=Array.isArray(sh.items)?sh.items:[];
+   out+='<div style="margin:14px 0;border:1px solid #b9a16a;border-radius:8px;padding:10px;background:#faf8f2"><b>Section '+(i+1)+' · '+length.toFixed(2)+'m long</b><div style="display:flex;flex-direction:row;width:100%;min-height:110px;border:3px solid #222;background:#eee;margin-top:8px;overflow:hidden">';
+   items.forEach(x=>{
+    const across=Math.max(0,Number(x.across)||Number(x.w)||0),run=Math.max(0,Number(x.run)||Number(x.l)||0),pct=Math.max(0,Math.min(100,across/rollWidth*100));
+    if(pct>0)out+='<div style="flex:0 0 '+pct+'%;width:'+pct+'%;min-width:0;min-height:110px;background:#d7b56d;border-right:2px solid #57431f;display:flex;align-items:center;justify-content:center;text-align:center;padding:4px;overflow:hidden;color:#222;font-size:11px"><div><b>'+esc(String(x.name||'Cut'))+'</b><br>'+across.toFixed(2)+'m across<br>'+run.toFixed(2)+'m long</div></div>';
    });
-   out+='</div><div class="offcut">Unused width: '+Math.max(0,roll-(Number(sh.used)||0)).toFixed(2)+'m · roll width '+roll+'m</div></div>';
+   out+='</div><div class="offcut">Used width: '+Number(sh.used||0).toFixed(2)+'m of '+rollWidth+'m · Unused width: '+Math.max(0,rollWidth-(Number(sh.used)||0)).toFixed(2)+'m</div>';
+   items.forEach(x=>{if(Array.isArray(x.nested)&&x.nested.length){out+='<p><b>Nested offcut cuts:</b></p>'+x.nested.map(n=>'<div class="line">'+esc(String(n.name||'Cut'))+' — '+Number(n.w||0).toFixed(2)+'m × '+Number(n.l||0).toFixed(2)+'m</div>').join('')}});
+   out+='</div>';
   });
   return out+'</section>';
  }
- const plan4=plans.find(p=>p.roll===4),plan5=plans.find(p=>p.roll===5);
  const layoutEl=document.getElementById('layout');
  const textPlan=plans.map(p=>'<div class="line"><b>'+p.roll+'m roll — '+p.total.toFixed(2)+' linear metres ('+p.shelves.length+' sections)</b>'+p.shelves.map((sh,i)=>'<p><b>Section '+(i+1)+' — '+sh.height.toFixed(2)+'m length; '+p.roll+'m roll width</b><br>'+sh.items.map(x=>esc(x.name)+' — '+x.across.toFixed(2)+'m across × '+x.run.toFixed(2)+'m long').join('<br>')+'<br>Unused width: '+Math.max(0,p.roll-sh.used).toFixed(2)+'m</p>').join('')+'</div>').join('');
- layoutEl.innerHTML='<p><b>Both roll widths compared. Recommended: '+roll+'m roll.</b></p>'+textPlan+renderRollLayout(plan4)+renderRollLayout(plan5); const notice=document.querySelector('.notice');
+ layoutEl.innerHTML='<p><b>Both roll widths compared. Recommended: '+roll+'m roll.</b></p>'+textPlan+renderRollLayout(plan4)+renderRollLayout(plan5);
+ const notice=document.querySelector('.notice');
  notice.textContent=invalid.length?'These rooms do not fit either the 4m or 5m roll in either direction: '+invalid.map(r=>r.name).join(', ')+'. Check measurements or consider a different solution.':'Automatic comparison selected the option that fits the most rooms, then uses the least total carpet area. Check pile direction, pattern repeats, matching, doorway turns and fitting allowances before ordering or cutting.';
 }
 
