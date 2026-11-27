@@ -225,32 +225,31 @@ document.getElementById('calc').onclick=()=>{
  const job=esc(document.getElementById('customer').value||'CWF job'),date=esc(document.getElementById('date').value||'');
  document.getElementById('cuts').innerHTML='<p><b>'+job+'</b> · '+date+' · Recommended '+roll+'m roll</p>'+rows.map((r,i)=>'<div class="line"><b>'+(i+1)+'. '+esc(r.name)+'</b><br>'+(r.ok?r.across.toFixed(2)+'m across × '+r.run.toFixed(2)+'m long':'<span style="color:#a33">Does not fit either roll width</span>')+'</div>').join('')+'<p><b>Total roll length: '+total.toFixed(2)+' linear metres on '+roll+'m roll</b></p>';
  function renderRollLayout(p){
-  if(!p||!p.shelves||!p.shelves.length)return '<div class="shelf"><b>'+p.roll+'m roll</b><p>No sections were generated for this roll.</p></div>';
-  const efficiency=p.supplied?100*p.area/p.supplied:0;
-  let html='<div class="card"><h3>'+p.roll+'m roll · '+p.total.toFixed(2)+' linear metres</h3><div class="stats"><div class="stat"><span class="muted">Carpet used</span><b>'+p.supplied.toFixed(2)+'m²</b></div><div class="stat"><span class="muted">Cut area</span><b>'+p.area.toFixed(2)+'m²</b></div><div class="stat"><span class="muted">Waste</span><b>'+p.waste.toFixed(2)+'m²</b></div><div class="stat"><span class="muted">Efficiency</span><b>'+efficiency.toFixed(1)+'%</b></div></div>';
-  p.shelves.forEach((sh,i)=>{
-   const scale=Math.min(150/p.roll,320/Math.max(sh.height,.01)),W=p.roll*scale,H=sh.height*scale;
-   let svg='<svg viewBox="0 0 '+W+' '+(H+4)+'" style="width:100%;height:auto;border:1px solid #bda15e;background:#f8f6ef"><rect x="0" y="0" width="'+W+'" height="'+H+'" fill="#eee" stroke="#222"/>';
-   sh.items.forEach(x=>{
-    const xx=(Number(x.acrossStart)||0)*scale,ww=x.across*scale,hh=x.run*scale;
-    if(x.shape&&x.shape.length>=3){const points=x.shape.map(pt=>(xx+pt[0]*scale)+','+(pt[1]*scale)).join(' ');svg+='<polygon points="'+points+'" fill="#d7b56d" fill-opacity=".8" stroke="#80652d" stroke-width="2"/>'; }
-    else svg+='<rect x="'+xx+'" y="0" width="'+ww+'" height="'+hh+'" fill="#d7b56d" fill-opacity=".65" stroke="#80652d" stroke-width="1.5"/>';
-    svg+='<text x="'+(xx+ww/2)+'" y="'+(hh/2)+'" text-anchor="middle" dominant-baseline="middle" font-size="'+Math.max(8,Math.min(13,scale*.11))+'">'+esc(x.name)+'</text>';
-    // Draw nested stair cuts over the landing shape, using their actual offcut positions.
-    (x.nested||[]).forEach(n=>{const nx=xx+n.x*scale,ny=n.y*scale,nw=n.w*scale,nh=n.l*scale;svg+='<rect x="'+nx+'" y="'+ny+'" width="'+nw+'" height="'+nh+'" fill="#f5e6bd" stroke="#473719" stroke-width="1.5"/><text x="'+(nx+nw/2)+'" y="'+(ny+nh/2)+'" text-anchor="middle" dominant-baseline="middle" font-size="'+Math.max(7,Math.min(11,scale*.09))+'">'+esc(n.name)+'</text>';});
+  try{
+   if(!p||!Array.isArray(p.shelves))return '<div class="notice">Roll layout data unavailable.</div>';
+   let html='<div class="card"><h3>'+p.roll+'m roll · '+Number(p.total||0).toFixed(2)+' linear metres</h3>';
+   if(!p.shelves.length){html+='<p>No cuts placed on this roll width.</p></div>';return html;}
+   const efficiency=p.supplied?100*(p.area||0)/p.supplied:0;
+   html+='<div class="stats"><div class="stat"><span class="muted">Carpet supplied</span><b>'+Number(p.supplied||0).toFixed(2)+'m²</b></div><div class="stat"><span class="muted">Cut area</span><b>'+Number(p.area||0).toFixed(2)+'m²</b></div><div class="stat"><span class="muted">Waste</span><b>'+Number(p.waste||0).toFixed(2)+'m²</b></div><div class="stat"><span class="muted">Efficiency</span><b>'+efficiency.toFixed(1)+'%</b></div></div>';
+   p.shelves.forEach((sh,i)=>{
+    const roll=Math.max(.1,Number(p.roll)||4),height=Math.max(.1,Number(sh.height)||.1),scale=Math.min(110/roll,240/height),W=roll*scale,H=height*scale;
+    let svg='<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 '+W+' '+(H+3)+'" style="display:block;width:100%;height:auto;max-width:600px;border:1px solid #bda15e;background:#f8f6ef"><rect x="0" y="0" width="'+W+'" height="'+H+'" fill="#eee" stroke="#222"/>';
+    (Array.isArray(sh.items)?sh.items:[]).forEach(x=>{
+     const across=Math.max(0,Number(x.across)||Number(x.w)||0),run=Math.max(0,Number(x.run)||Number(x.l)||0),xx=Math.max(0,Number(x.acrossStart)||0)*scale,ww=Math.min(W-xx,across*scale),hh=Math.min(H,run*scale);
+     if(ww>0&&hh>0){svg+='<rect x="'+xx+'" y="0" width="'+ww+'" height="'+hh+'" fill="#d7b56d" fill-opacity=".7" stroke="#80652d" stroke-width="1.5"/>';svg+='<text x="'+(xx+ww/2)+'" y="'+Math.max(10,hh/2)+'" text-anchor="middle" dominant-baseline="middle" font-size="'+Math.max(8,Math.min(13,scale*.12))+'" fill="#222">'+esc(String(x.name||'Cut'))+'</text>';}
+     (Array.isArray(x.nested)?x.nested:[]).forEach(n=>{const nx=xx+(Number(n.x)||0)*scale,ny=(Number(n.y)||0)*scale,nw=(Number(n.w)||0)*scale,nh=(Number(n.l)||0)*scale;if(nw>0&&nh>0)svg+='<rect x="'+nx+'" y="'+ny+'" width="'+nw+'" height="'+nh+'" fill="#f5e6bd" stroke="#473719"/>';});
+    });
+    svg+='</svg>';
+    html+='<div class="shelf"><b>Section '+(i+1)+' · '+height.toFixed(2)+'m long · '+roll+'m roll</b>'+svg+'<div class="offcut">Unused width: '+Math.max(0,roll-(Number(sh.used)||0)).toFixed(2)+'m</div></div>';
    });
-   svg+='</svg>';
-   html+='<div class="shelf"><b>Cut section '+(i+1)+' · '+sh.height.toFixed(2)+'m long · '+p.roll+'m roll</b>'+svg+'<div class="offcut">Unused roll width: '+Math.max(0,p.roll-sh.used).toFixed(2)+'m</div></div>';
-  });
-  return html+'</div>';
+   return html+'</div>';
+  }catch(e){console.error('CWF roll layout render error',e);return '<div class="notice">Diagram rendering failed: '+esc(String(e&&e.message||e))+'</div>';}
  }
  const plan4=plans.find(p=>p.roll===4),plan5=plans.find(p=>p.roll===5);
  const layoutEl=document.getElementById('layout');
  const textPlan=plans.map(p=>'<div class="line"><b>'+p.roll+'m roll — '+p.total.toFixed(2)+' linear metres ('+p.shelves.length+' sections)</b>'+p.shelves.map((sh,i)=>'<p><b>Section '+(i+1)+' — '+sh.height.toFixed(2)+'m length; '+p.roll+'m roll width</b><br>'+sh.items.map(x=>esc(x.name)+' — '+x.across.toFixed(2)+'m across × '+x.run.toFixed(2)+'m long').join('<br>')+'<br>Unused width: '+Math.max(0,p.roll-sh.used).toFixed(2)+'m</p>').join('')+'</div>').join('');
  layoutEl.innerHTML='<p><b>Both roll widths compared. Recommended: '+roll+'m roll.</b></p>'+textPlan;
- try{layoutEl.insertAdjacentHTML('beforeend',renderRollLayout(plan4)+renderRollLayout(plan5));}
- catch(layoutError){console.error('CWF diagram renderer error',layoutError);layoutEl.insertAdjacentHTML('beforeend','<p class="notice">Roll diagrams could not render, but the section-by-section cut list is shown above.</p>');}
- const notice=document.querySelector('.notice');
+ layoutEl.insertAdjacentHTML('beforeend',renderRollLayout(plan4)+renderRollLayout(plan5)); const notice=document.querySelector('.notice');
  notice.textContent=invalid.length?'These rooms do not fit either the 4m or 5m roll in either direction: '+invalid.map(r=>r.name).join(', ')+'. Check measurements or consider a different solution.':'Automatic comparison selected the option that fits the most rooms, then uses the least total carpet area. Check pile direction, pattern repeats, matching, doorway turns and fitting allowances before ordering or cutting.';
 }
 
