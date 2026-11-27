@@ -93,7 +93,7 @@ function addRoom(){
 }
 addRoom();document.getElementById('add').onclick=addRoom;document.getElementById('date').value=new Date().toISOString().slice(0,10);
 ['standardPlates','specialPlates'].forEach(id=>document.getElementById(id).addEventListener('input',()=>{const s=Math.max(0,Math.floor(Number(document.getElementById('standardPlates').value)||0)),p=Math.max(0,Math.floor(Number(document.getElementById('specialPlates').value)||0)),plates=s*5+p*15;document.getElementById('plateCost').textContent='£'+plates.toFixed(2);if(document.getElementById('result').hidden){quoteTotals.carpet=plates;fittingTotals.carpet=0;window.cwfCarpetQuoteLines=[];if(s)window.cwfCarpetQuoteLines.push({label:'Standard doorplates ('+s+')',amount:'£'+(s*5).toFixed(2)});if(p)window.cwfCarpetQuoteLines.push({label:'Special doorplates ('+p+')',amount:'£'+(p*15).toFixed(2)});renderQuote();}else{document.getElementById('calc').click();}}));
-document.getElementById('calc').onclick=()=>{
+document.getElementById('calc').onclick=()=>{ const __layoutDiag=document.getElementById('layout'); if(__layoutDiag)__layoutDiag.innerHTML='<div style="padding:10px;background:#fff4d6;border:2px solid #b99b54;border-radius:8px"><b>Cutting calculation started…</b></div>'; try {
  const price=Number(document.getElementById('price').value)||0;
  const underlayEnabled=document.getElementById('underlayEnabled').checked;
  const underlayPrice=Number(document.getElementById('underlayPrice').value)||0;
@@ -254,6 +254,7 @@ document.getElementById('calc').onclick=()=>{
  }
  const notice=document.querySelector('.notice');
  notice.textContent=invalid.length?'These rooms do not fit either the 4m or 5m roll in either direction: '+invalid.map(r=>r.name).join(', ')+'. Check measurements or consider a different solution.':'Automatic comparison selected the option that fits the most rooms, then uses the least total carpet area. Check pile direction, pattern repeats, matching, doorway turns and fitting allowances before ordering or cutting.';
+ } catch(__calcError) { const __e=document.getElementById('layout'); if(__e)__e.innerHTML='<div style="padding:12px;background:#fff0f0;border:2px solid #c00;border-radius:8px;color:#900"><b>Cutting calculation failed:</b><pre style="white-space:pre-wrap">'+esc(String(__calcError&&__calcError.stack||__calcError))+'</pre></div>'; console.error('CWF carpet cutting calculation error',__calcError); }
 }
 
 const quoteTotals={carpet:0,vinyl:0,laminate:0,lvt:0,prep:0,uplift:0};
