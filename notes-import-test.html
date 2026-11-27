@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>CWF Notes Import — Test</title>
+<style>
+*{box-sizing:border-box}body{font-family:-apple-system,BlinkMacSystemFont,Arial,sans-serif;background:#f5f5f5;color:#222;margin:0;padding:16px;max-width:900px;margin:auto}
+.card{background:white;border:1px solid #ddd;border-radius:18px;padding:18px;margin:14px 0}h1{font-size:25px}textarea,input,button{font:inherit}textarea{width:100%;min-height:160px;padding:12px;border:1px solid #bbb;border-radius:12px}input{padding:10px;border:1px solid #bbb;border-radius:9px;min-width:0;width:100%}button{border:0;border-radius:10px;padding:13px 16px;font-weight:700;background:#d5b878;margin:6px 4px 6px 0}button.dark{background:#171717;color:white}button.secondary{background:#eee}.status{background:#f3f0e8;border-radius:10px;padding:12px;margin:10px 0}.row{display:grid;grid-template-columns:1.2fr 1fr 1fr auto;gap:8px;align-items:center;margin:8px 0}.room{border:1px solid #ddd;border-radius:12px;padding:12px;margin:10px 0}.small{color:#666;font-size:14px}.result{font-size:18px;font-weight:700}.hidden{display:none}@media(max-width:520px){.row{grid-template-columns:1fr 1fr}.row input:first-child{grid-column:1/-1}.row button{grid-column:1/-1}}
+</style></head><body>
+<div class="card"><h1>📋 CWF Notes Import — TEST PAGE</h1><p>This is separate from the live cutting planner. Nothing here can change your live app.</p>
+<h3>1. Paste Notes text or upload screenshot</h3><textarea id="noteText" placeholder="Example:&#10;Lounge 6.9 x 3.1 + 2.8 x 65cm&#10;Hall 2.2 x 1.5"></textarea>
+<label><b>Screenshot / photo</b></label><input id="photo" type="file" accept="image/*">
+<div id="status" class="status">Ready. Paste text or choose a screenshot.</div>
+<button id="ocr">Read screenshot</button><button id="parse">Preview measurements</button><button class="secondary" id="clear">Clear</button>
+</div>
+<div class="card"><h2>2. Review rooms</h2><p class="small">Edit the name and measurements before approving. Extra measurements on the same line are shown as separate sections.</p><div id="preview"></div><button class="dark hidden" id="approve">Confirm measurements</button></div>
+<div class="card"><h2>3. Confirmed job summary</h2><div id="summary">Nothing confirmed yet.</div></div>
+<script>
+const $=id=>document.getElementById(id);let rows=[];
+function metres(v,u){v=Number(v);u=(u||'').toLowerCase();if(u==='mm')return v/1000;if(u==='cm')return v/100;if(!u&&v>=100)return v/1000;return v}
+function parse(){
+ const lines=$('noteText').value.split(/[\\n;]+/).map(x=>x.trim()).filter(Boolean);rows=[];
+ const re=/(\\d+(?:[.,]\\d+)?)\\s*(mm|cm|m)?\\s*[x×]\\s*(\\d+(?:[.,]\\d+)?)\\s*(mm|cm|m)?/gi;
+ lines.forEach(line=>{let ms=[...line.matchAll(re)];if(!ms.length)return;let name=(line.match(/^([A-Za-z][A-Za-z0-9 '\\/-]{0,30})/)||[])[1]||'Room';name=name.replace(/\\b(mm|cm|m)\\b/ig,'').trim()||'Room';ms.forEach((m,i)=>rows.push({name:i?name+' - extra section':name,w:metres(m[1].replace(',','.'),m[2]),l:metres(m[3].replace(',','.'),m[4]),source:line}));});
+ render();
+}
+function render(){const p=$('preview');p.innerHTML='';if(!rows.length){p.innerHTML='<div class="status">No measurements found. Try: Lounge 6.9 x 3.1 + 2.8 x 65cm</div>';$('approve').classList.add('hidden');return}
+ rows.forEach((r,i)=>{const d=document.createElement('div');d.className='room';d.innerHTML='<div class="row"><input aria-label="Room name" value="'+esc(r.name)+'"><input aria-label="Width" type="number" step=".01" value="'+r.w.toFixed(2)+'"><input aria-label="Length" type="number" step=".01" value="'+r.l.toFixed(2)+'"><button class="secondary">✕</button></div><div class="small">Area: <b>'+ (r.w*r.l).toFixed(2)+' m²</b> · Source: '+esc(r.source)+'</div>';const inputs=d.querySelectorAll('input');inputs[0].onchange=e=>r.name=e.target.value;inputs[1].onchange=e=>{r.w=Number(e.target.value);render()};inputs[2].onchange=e=>{r.l=Number(e.target.value);render()};d.querySelector('button').onclick=()=>{rows.splice(i,1);render()};p.appendChild(d)});$('approve').classList.remove('hidden')}
+function esc(x){return String(x).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+$('parse').onclick=parse;
+$('clear').onclick=()=>{$('noteText').value='';$('photo').value='';$('preview').innerHTML='';$('status').textContent='Ready. Paste text or choose a screenshot.';rows=[];$('approve').classList.add('hidden');$('summary').textContent='Nothing confirmed yet.'};
+$('ocr').onclick=async()=>{const file=$('photo').files[0];if(!file){$('status').textContent='Choose an image first.';return}try{$('status').textContent='Loading OCR engine…';if(!window.Tesseract){await new Promise((ok,no)=>{const s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js';s.onload=ok;s.onerror=no;document.head.appendChild(s)})}$('status').textContent='Reading screenshot…';const out=await Tesseract.recognize(file,'eng',{logger:m=>{if(m.status==='recognizing text')$('status').textContent='Reading: '+Math.round((m.progress||0)*100)+'%'}});$('noteText').value=out.data.text||'';$('status').textContent='OCR complete. Check extracted text, then Preview measurements.'}catch(e){$('status').textContent='OCR error: '+e.message}};
+$('approve').onclick=()=>{$('summary').innerHTML='<div class="result">'+rows.length+' sections · '+rows.reduce((a,r)=>a+r.w*r.l,0).toFixed(2)+' m² total</div>'+rows.map(r=>'<p>'+esc(r.name)+': '+r.w.toFixed(2)+' × '+r.l.toFixed(2)+'m = '+(r.w*r.l).toFixed(2)+'m²</p>').join('')+'<p class="small">Confirmed only in this test page. Not sent to the live planner.</p>'};
+</script></body></html>
