@@ -223,7 +223,7 @@ document.getElementById('calc').onclick=()=>{ const __layoutDiag=document.getEle
  document.getElementById('count').textContent=placed.length+' / '+raw.length;
  document.getElementById('waste').textContent=plan.waste.toFixed(2)+' m²';
  const job=esc(document.getElementById('customer').value||'CWF job'),date=esc(document.getElementById('date').value||'');
- document.getElementById('cuts').innerHTML='<p><b>'+job+'</b> · '+date+' · Recommended '+roll+'m roll</p>'+rows.map((r,i)=>'<div class="line"><b>'+(i+1)+'. '+esc(r.name)+'</b><br>'+(r.ok?r.across.toFixed(2)+'m across × '+r.run.toFixed(2)+'m long':'<span style="color:#a33">Does not fit either roll width</span>')+'</div>').join('')+'<p><b>Total roll length: '+total.toFixed(2)+' linear metres on '+roll+'m roll</b></p>';
+ const __cutRowsHtml=Array.from(rows||[]).map((r,i)=>{const across=Number(r&&r.across),run=Number(r&&r.run);return '<div class="line"><b>'+(i+1)+'. '+esc(String(r&&r.name||'Unnamed cut'))+'</b><br>'+(r&&r.ok&&Number.isFinite(across)&&Number.isFinite(run)?across.toFixed(2)+'m across × '+run.toFixed(2)+'m long':'<span style="color:#a33">Does not fit either roll width or placement measurements missing</span>')+'</div>';}).join(''); document.getElementById('cuts').innerHTML='<p><b>'+job+'</b> · '+date+' · Recommended '+roll+'m roll</p>'+__cutRowsHtml+'<p><b>Total roll length: '+total.toFixed(2)+' linear metres on '+roll+'m roll</b></p>';
  function renderRollLayout(p){
   if(!p)return '<div class="notice">Roll plan missing.</div>';
   const rollWidth=Number(p.roll)||4,sections=Array.isArray(p.shelves)?p.shelves:[];
