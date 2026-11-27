@@ -28,7 +28,7 @@ nav{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0}nav button{flex:1;min-widt
 <section class="card"><h2>Carpet fitting</h2><div class="grid"><div><label>Fitting charge (automatically included)</label><div style="padding:12px;border:1px solid #ddd;border-radius:8px;background:#f4f1e9">£5 per room m² · £60 minimum per room (12m²)</div></div>
 <div><label>Hall surcharge</label><label style="display:flex;align-items:center;gap:8px;font-size:15px"><input id="hallEnabled" type="checkbox" style="width:auto"> Add £30 hall surcharge</label></div><div><label>Stairs & landing</label><label style="display:flex;align-items:center;gap:8px;font-size:15px"><input id="stairsEnabled" type="checkbox" style="width:auto"> £50 surcharge (minimum £100 total fitting)</label></div><div><label>Wrap-round stairs</label><label style="display:flex;align-items:center;gap:8px;font-size:15px"><input id="wrapStairsEnabled" type="checkbox" style="width:auto"> Add £100 surcharge</label></div><div><label>Double staircase</label><label style="display:flex;align-items:center;gap:8px;font-size:15px"><input id="doubleStairsEnabled" type="checkbox" style="width:auto"> Add £80 surcharge</label></div>
 </div></section>
-<section class="card"><h2>Room measurements</h2><p class="muted">Enter the finished room width and length in metres. The planner tries both directions and groups rooms together where they fit across the roll.</p><div id="rooms"></div><div class="no-print"><button class="gold" id="add">+ Add room</button><button id="calc">Calculate cutting plan</button></div></section>
+<section class="card no-print" id="notesImportCard"><h2>📋 Import measurements from Notes</h2><p class="muted">Paste your notes or upload a screenshot. Review the measurements before importing them into the cutting planner.</p><textarea id="notesImportText" rows="6" style="width:100%;padding:12px;border:1px solid #bbb;border-radius:8px;font:16px Arial" placeholder="Lounge 6.9 x 3.1 + 2.8 x 65cm&#10;Hall 2.2 x 1.5"></textarea><div class="grid" style="margin-top:10px"><div><label>Screenshot / photo of Notes</label><input id="notesImage" type="file" accept="image/*"></div><div><label>OCR status</label><div id="notesOcrStatus" class="muted" style="padding:12px;background:#f4f1e9;border-radius:8px">Paste text, or choose a screenshot to read its text.</div></div></div><button type="button" class="gold" id="parseNotes">Preview measurements</button><button type="button" id="clearNotes">Clear</button><div id="notesPreview"></div><button type="button" class="gold" id="importNotes" hidden>Import reviewed measurements into rooms</button></section><section class="card"><h2>Room measurements</h2><p class="muted">Enter the finished room width and length in metres. The planner tries both directions and groups rooms together where they fit across the roll.</p><div id="rooms"></div><div class="no-print"><button class="gold" id="add">+ Add room</button><button id="calc">Calculate cutting plan</button></div></section>
 <section class="card" id="result" hidden><h2>Cutting plan</h2>
 <div class="stats"><div class="stat"><span class="muted">Carpet length</span><b id="metres">—</b></div><div class="stat"><span class="muted">Carpet supplied</span><b id="supplied">—</b></div><div class="stat"><span class="muted">Room area</span><b id="roomarea">—</b></div><div class="stat"><span class="muted">Waste</span><b id="waste">—</b></div><div class="stat"><span class="muted">Materials</span><b id="grandTotal">—</b></div><div class="stat"><span class="muted">Fitting</span><b id="fittingCost">—</b></div><div class="stat"><span class="muted">Job total</span><b id="jobTotal">—</b></div></div><div hidden><span id="cost"></span><span id="underlayCost"></span><span id="plateCost"></span><span id="count"></span></div>
 <div class="card"><h3>Roll layout</h3><div id="layout"></div></div><details class="planDetails" open><summary>View detailed cutting plan &amp; room breakdown</summary><div id="cuts"></div></details>
@@ -93,6 +93,59 @@ function addRoom(){
 }
 addRoom();document.getElementById('add').onclick=addRoom;document.getElementById('date').value=new Date().toISOString().slice(0,10);
 ['standardPlates','specialPlates'].forEach(id=>document.getElementById(id).addEventListener('input',()=>{const s=Math.max(0,Math.floor(Number(document.getElementById('standardPlates').value)||0)),p=Math.max(0,Math.floor(Number(document.getElementById('specialPlates').value)||0)),plates=s*5+p*15;document.getElementById('plateCost').textContent='£'+plates.toFixed(2);if(document.getElementById('result').hidden){quoteTotals.carpet=plates;fittingTotals.carpet=0;window.cwfCarpetQuoteLines=[];if(s)window.cwfCarpetQuoteLines.push({label:'Standard doorplates ('+s+')',amount:'£'+(s*5).toFixed(2)});if(p)window.cwfCarpetQuoteLines.push({label:'Special doorplates ('+p+')',amount:'£'+(p*15).toFixed(2)});renderQuote();}else{document.getElementById('calc').click();}}));
+
+// CWF Notes import: parse typed measurements and OCR text from screenshots.
+(function(){
+ const textBox=document.getElementById('notesImportText'),imageInput=document.getElementById('notesImage'),status=document.getElementById('notesOcrStatus'),preview=document.getElementById('notesPreview'),importBtn=document.getElementById('importNotes');
+ let parsed=[];
+ function toMetres(raw,unit){
+  let n=Number(raw);if(!Number.isFinite(n)||n<=0)return 0;
+  unit=(unit||'').toLowerCase();
+  if(unit==='mm')return n/1000;if(unit==='cm')return n/100;
+  if(!unit&&n>=100)return n/1000; // large bare values assumed millimetres
+  return n;
+ }
+ function extractPairs(line){
+  const re=/(\d+(?:\.\d+)?)\s*(mm|cm|m)?\s*[x×]\s*(\d+(?:\.\d+)?)\s*(mm|cm|m)?/gi;
+  let m,out=[];while((m=re.exec(line))){let a=toMetres(m[1],m[2]),b=toMetres(m[3],m[4]);if(a>0&&b>0)out.push([a,b]);}return out;
+ }
+ function parseNotes(raw){
+  const rows=[],lines=raw.split(/[\n;]+/).map(x=>x.trim()).filter(Boolean);
+  for(let line of lines){
+   const pairs=extractPairs(line);if(!pairs.length)continue;
+   let name=(line.match(/^([A-Za-z][A-Za-z0-9 '\/-]{0,30})/)?line.match(/^([A-Za-z][A-Za-z0-9 '\/-]{0,30})/)[1].trim():'Room';
+   name=name.replace(/\b(mm|cm|m)\b/ig,'').trim()||'Room';
+   pairs.forEach((p,i)=>rows.push({name:i===0?name:name+' - extra section',w:p[0],l:p[1],source:line}));
+  }
+  return rows;
+ }
+ function showPreview(){
+  parsed=parseNotes(textBox.value);preview.innerHTML='';
+  if(!parsed.length){preview.innerHTML='<div class="notice">No measurements recognised yet. Try formats like <b>Lounge 6.9 x 3.1</b> or <b>Bedroom 4200 x 3600</b>.</div>';importBtn.hidden=true;return;}
+  preview.innerHTML='<div class="planDetails"><b>Review before importing</b>'+parsed.map((r,i)=>'<div class="line"><b>'+ (i+1)+'. '+esc(r.name)+'</b> — '+r.w.toFixed(2)+' × '+r.l.toFixed(2)+'m ('+(r.w*r.l).toFixed(2)+'m²)<br><small>'+esc(r.source)+'</small></div>').join('')+'</div>';
+  importBtn.hidden=false;
+ }
+ document.getElementById('parseNotes').onclick=showPreview;
+ document.getElementById('clearNotes').onclick=()=>{textBox.value='';imageInput.value='';preview.innerHTML='';parsed=[];importBtn.hidden=true;status.textContent='Paste text, or choose a screenshot to read its text.'};
+ imageInput.onchange=async()=>{
+  const file=imageInput.files&&imageInput.files[0];if(!file)return;
+  status.textContent='Loading text recognition…';
+  try{
+   if(!window.Tesseract){await new Promise((resolve,reject)=>{let sc=document.createElement('script');sc.src='https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js';sc.onload=resolve;sc.onerror=reject;document.head.appendChild(sc);});}
+   status.textContent='Reading screenshot… this can take a little while.';
+   const result=await Tesseract.recognize(file,'eng',{logger:m=>{if(m.status==='recognizing text')status.textContent='Reading screenshot: '+Math.round((m.progress||0)*100)+'%';}});
+   textBox.value=result.data.text||'';status.textContent='Text extracted. Check it, then tap Preview measurements.';
+  }catch(e){status.textContent='Could not read image. You can paste the Notes text instead.';alert('Screenshot OCR failed. Please paste the text from Notes.');}
+ };
+ importBtn.onclick=()=>{
+  if(!parsed.length){showPreview();return;}
+  // Add only reviewed entries; do not clear existing job measurements.
+  parsed.forEach(r=>{addRoom();const row=list.lastElementChild;row.querySelector('.name').value=r.name;row.querySelector('.w').value=r.w.toFixed(2);row.querySelector('.l').value=r.l.toFixed(2);row.querySelectorAll('input').forEach(x=>x.removeAttribute('readonly'));});
+  showPage('carpet');document.getElementById('result').hidden=true;
+  alert('Imported '+parsed.length+' measurement(s). Check the room list, then Calculate cutting plan.');
+ };
+})();
+
 document.getElementById('calc').onclick=()=>{ const __layoutDiag=document.getElementById('layout'); if(__layoutDiag)__layoutDiag.innerHTML='<div style="padding:10px;background:#fff4d6;border:2px solid #b99b54;border-radius:8px"><b>Cutting calculation started…</b></div>'; try {
  const price=Number(document.getElementById('price').value)||0;
  const underlayEnabled=document.getElementById('underlayEnabled').checked;
