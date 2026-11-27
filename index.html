@@ -1,54 +1,654 @@
-<!doctype html>
-<html lang="en">
-<head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>CWF Cutting Planner</title>
-<style>
-*{box-sizing:border-box}body{margin:0;background:#f4f4f2;color:#222;font:16px Arial,sans-serif}.head{background:#171717;color:white;padding:24px}.head small{color:#d7b56d;letter-spacing:2px;font-weight:bold}.head h1{margin:8px 0}.wrap{max-width:900px;margin:auto;padding:16px}.card{background:white;border:1px solid #ddd;border-radius:12px;padding:16px;margin:14px 0}h2{font-size:18px;margin:0 0 14px}.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}label{display:block;font-size:12px;font-weight:bold;color:#555;margin-bottom:5px}input,select{width:100%;padding:12px;border:1px solid #bbb;border-radius:8px;font-size:16px}.room{display:grid;grid-template-columns:1.4fr 1fr 1fr 40px;gap:8px;margin:12px 0;align-items:end}button{padding:12px 16px;border:0;border-radius:8px;font-weight:bold;font-size:15px;background:#171717;color:white;margin:4px 4px 4px 0}.gold{background:#d7b56d;color:#171717}.remove{background:#eee;color:#222}.planDetails{margin-top:12px;border:1px solid #ddd;border-radius:10px;padding:12px;background:#fafafa}.planDetails summary{font-weight:700;font-size:16px;padding:8px;cursor:pointer}.planDetails[open] summary{margin-bottom:8px}.stats .stat{font-size:14px}.stats .stat b{font-size:18px}.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}.stat{background:#f4f1e9;padding:12px;border-radius:8px;min-width:0;display:flex;flex-direction:column;gap:6px;overflow-wrap:anywhere}.stat b{display:block;font-size:20px;margin-top:0;line-height:1.3}.line{display:block;padding:12px 10px;margin:5px 0;border-bottom:1px solid #ddd;background:#fff;line-height:1.5;overflow-wrap:anywhere}.muted{font-size:12px;color:#666}.shelf{border:1px solid #c9b783;border-radius:8px;margin:12px 0;padding:10px;background:#faf8f2}.piece{display:inline-block;background:#e8d7a9;border:1px solid #987d42;border-radius:5px;padding:8px;margin:3px;font-size:12px}.offcut{color:#666;font-size:12px;margin-top:6px}.notice{background:#fff8e8;border-left:4px solid #d7b56d;padding:10px;font-size:13px}@media(max-width:600px){.grid{grid-template-columns:1fr}.room{grid-template-columns:1fr 1fr 1fr 36px}.stats{grid-template-columns:1fr 1fr;gap:8px}.stat{padding:10px}.stat b{font-size:18px}.line{padding:12px;margin:6px 0}}@media print{.head{background:white;color:black;border-bottom:2px solid}.no-print{display:none!important}.wrap{padding:0}.card{break-inside:avoid}}
-nav{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0}nav button{flex:1;min-width:100px}.page[hidden]{display:none!important}@media print{body[data-print-section] .head,body[data-print-section] #pageNav,body[data-print-section] main>.card:not(:has(#page-quote)),body[data-print-section] .page:not([id="page-quote"]){display:none!important}body[data-print-section] #page-quote{display:block!important}body[data-print-section] #page-quote .no-print,body[data-print-section] #page-quote button{display:none!important}} .drawCanvasWrap{background:#171717;border-radius:12px;padding:8px;overflow:hidden}.drawCanvas{display:block;width:100%;height:420px;touch-action:none;background:#202020;border-radius:8px}.drawTools{display:grid;grid-template-columns:1fr 1fr;gap:8px}.drawRoom{background:#f4f1e9;border:1px solid #d7b56d;border-radius:8px;padding:10px;margin:8px 0}.drawRoom button{margin-top:6px}.drawHelp{font-size:13px;color:#666}@media(max-width:600px){.drawCanvas{height:360px}.drawTools{grid-template-columns:1fr 1fr}}</style>
-</head>
-<body>
-<header class="head"><div class="wrap"><small>CHRIS WALLACE FLOORING</small><h1>CWF Cutting Planner</h1><div>Carpet room measurements and roll calculations</div></div></header>
-<main class="wrap">
-<section class="card"><h2>Job details</h2><div class="grid">
-<div><label>Customer / job name</label><input id="customer" placeholder="Customer name"></div>
-<div><label>Job address</label><input id="jobAddress" placeholder="Property address"></div>
-<div><label>Customer email address</label><input id="customerEmail" type="email" placeholder="name@example.com"></div>
-<div><label>Date</label><input id="date" type="date"></div>
-<div><label>Standard doorplates (£5 each)</label><input id="standardPlates" type="number" min="0" step="1" placeholder=""></div>
-<div><label>Special doorplates (£15 each)</label><input id="specialPlates" type="number" min="0" step="1" placeholder=""></div>
-</div></section>
-<nav class="no-print" id="pageNav"><button type="button" data-page-target="carpet" onclick="document.querySelectorAll('.page').forEach(p=>p.hidden=true);document.getElementById('page-carpet').hidden=false;window.scrollTo(0,0)">Carpet</button><button type="button" data-page-target="drawing" onclick="document.querySelectorAll('.page').forEach(p=>p.hidden=true);document.getElementById('page-drawing').hidden=false;window.scrollTo(0,0)">Site Drawing</button><button type="button" data-page-target="vinyl" onclick="document.querySelectorAll('.page').forEach(p=>p.hidden=true);document.getElementById('page-vinyl').hidden=false;window.scrollTo(0,0)">Vinyl</button><button type="button" data-page-target="laminate" onclick="document.querySelectorAll('.page').forEach(p=>p.hidden=true);document.getElementById('page-laminate').hidden=false;window.scrollTo(0,0)">Laminate</button><button type="button" data-page-target="lvt" onclick="document.querySelectorAll('.page').forEach(p=>p.hidden=true);document.getElementById('page-lvt').hidden=false;window.scrollTo(0,0)">LVT</button><button type="button" data-page-target="prep" onclick="document.querySelectorAll('.page').forEach(p=>p.hidden=true);document.getElementById('page-prep').hidden=false;window.scrollTo(0,0)">Screed / DPM / Glue</button><button type="button" data-page-target="contracts" onclick="document.querySelectorAll('.page').forEach(p=>p.hidden=true);document.getElementById('page-contracts').hidden=false;window.scrollTo(0,0)">Contract flooring</button><button type="button" data-page-target="tiles" onclick="document.querySelectorAll('.page').forEach(p=>p.hidden=true);document.getElementById('page-tiles').hidden=false;window.scrollTo(0,0)">Carpet tiles</button><button type="button" data-page-target="uplift" onclick="document.querySelectorAll('.page').forEach(p=>p.hidden=true);document.getElementById('page-uplift').hidden=false;window.scrollTo(0,0)">Uplift / Removal</button></nav>
-<div id="page-carpet" class="page">
-<section class="card"><h2>Carpet selection</h2><div class="grid"><div><label>Roll width selection</label><input value="Automatic (4m or 5m)" disabled></div>
-<div><label>Carpet price per m² (£)</label><input id="price" type="number" min="0" step=".01" placeholder="0.00"></div>
-<div><label>Underlay price per room m² (£)</label><input id="underlayPrice" type="number" min="0" step=".01" placeholder="0.00"></div>
-<div><label>Include underlay?</label><label style="display:flex;align-items:center;gap:8px;font-size:15px"><input id="underlayEnabled" type="checkbox" style="width:auto"> Yes, add underlay</label></div>
-</div></section>
-<section class="card"><h2>Carpet fitting</h2><div class="grid"><div><label>Fitting charge (automatically included)</label><div style="padding:12px;border:1px solid #ddd;border-radius:8px;background:#f4f1e9">£5 per room m² · £60 minimum per room (12m²)</div></div>
-<div><label>Hall surcharge</label><label style="display:flex;align-items:center;gap:8px;font-size:15px"><input id="hallEnabled" type="checkbox" style="width:auto"> Add £30 hall surcharge</label></div><div><label>Stairs & landing</label><label style="display:flex;align-items:center;gap:8px;font-size:15px"><input id="stairsEnabled" type="checkbox" style="width:auto"> £50 surcharge (minimum £100 total fitting)</label></div><div><label>Wrap-round stairs</label><label style="display:flex;align-items:center;gap:8px;font-size:15px"><input id="wrapStairsEnabled" type="checkbox" style="width:auto"> Add £100 surcharge</label></div><div><label>Double staircase</label><label style="display:flex;align-items:center;gap:8px;font-size:15px"><input id="doubleStairsEnabled" type="checkbox" style="width:auto"> Add £80 surcharge</label></div>
-</div></section>
-<section class="card no-print" id="notesImportCard"><h2>📋 Import measurements from Notes</h2><p class="muted">Paste your notes or upload a screenshot. Review the measurements before importing them into the cutting planner.</p><textarea id="notesImportText" rows="6" style="width:100%;padding:12px;border:1px solid #bbb;border-radius:8px;font:16px Arial" placeholder="Lounge 6.9 x 3.1 + 2.8 x 65cm&#10;Hall 2.2 x 1.5"></textarea><div class="grid" style="margin-top:10px"><div><label>Screenshot / photo of Notes</label><input id="notesImage" type="file" accept="image/*"></div><div><label>OCR status</label><div id="notesOcrStatus" class="muted" style="padding:12px;background:#f4f1e9;border-radius:8px">Paste text, or choose a screenshot to read its text.</div></div></div><button type="button" class="gold" id="readNotesImage" onclick="window.cwfReadScreenshot()">Read screenshot</button><button type="button" class="gold" id="parseNotes" onclick="window.cwfPreviewNotes()">Preview measurements</button><button type="button" id="clearNotes" onclick="window.cwfClearNotes()">Clear</button><div id="notesPreview"></div><button type="button" class="gold" id="importNotes" hidden>Import reviewed measurements into rooms</button></section><script>
-window.cwfReadScreenshot=async function(){
- const box=document.getElementById('notesImportText'),fileInput=document.getElementById('notesImage'),status=document.getElementById('notesOcrStatus');
- status.textContent='Button pressed — starting OCR…';
- const file=fileInput.files&&fileInput.files[0];if(!file){status.textContent='Please choose a screenshot first.';return;}
+window.cwfClearNotes=function(){document.getElementById('notesImportText').value='';document.getElementById('notesImage').value='';document.getElementById('notesPreview').innerHTML='';document.getElementById('importNotes').hidden=true;document.getElementById('notesOcrStatus').textContent='Paste text, or choose a screenshot to read its text.';window.cwfParsedNotes=[];};
+</script><section class="card"><h2>Room measurements</h2><p class="muted">Enter the finished room width and length in metres. The planner tries both directions and groups rooms together where they fit across the roll.</p><div id="rooms"></div><div class="no-print"><button class="gold" id="add">+ Add room</button><button id="calc">Calculate cutting plan</button></div></section>
+<section class="card" id="result" hidden><h2>Cutting plan</h2>
+<div class="stats"><div class="stat"><span class="muted">Carpet length</span><b id="metres">—</b></div><div class="stat"><span class="muted">Carpet supplied</span><b id="supplied">—</b></div><div class="stat"><span class="muted">Room area</span><b id="roomarea">—</b></div><div class="stat"><span class="muted">Waste</span><b id="waste">—</b></div><div class="stat"><span class="muted">Materials</span><b id="grandTotal">—</b></div><div class="stat"><span class="muted">Fitting</span><b id="fittingCost">—</b></div><div class="stat"><span class="muted">Job total</span><b id="jobTotal">—</b></div></div><div hidden><span id="cost"></span><span id="underlayCost"></span><span id="plateCost"></span><span id="count"></span></div>
+<div class="card"><h3>Roll layout</h3><div id="layout"></div></div><details class="planDetails" open><summary>View detailed cutting plan &amp; room breakdown</summary><div id="cuts"></div></details>
+<div id="rollOptimizer" class="card" hidden><h2>🔧 Roll Width Optimiser</h2><p class="muted">Separate comparison only — does not change your original plan or quotation.</p><button type="button" class="gold" id="runOptimizer">Compare roll widths</button><div id="optimizerResults"></div></div><p class="notice">This is a first-fit cutting estimate, not a guaranteed nesting solution. Check pile direction, pattern repeats, matching, doorway turns and fitting allowances before ordering or cutting.</p>
+<div class="no-print"><button type="button" class="gold" onclick="saveSectionPdf('result','CWF Carpet Quotation')">Save carpet sheet as PDF</button><button onclick="window.print()">Print fitter's sheet</button></div>
+</section>
+
+</div>
+<div id="page-drawing" class="page" hidden><section class="card"><h2>📐 Simple Site Drawing</h2><p class="muted">Draw rectangular rooms quickly, or enter each wall measurement to create L-shapes, landings and awkward spaces.</p><div class="grid"><div><label>Drawing method</label><select id="drawMode" onchange="document.getElementById('rectEntry').hidden=this.value==='walls';document.getElementById('wallEntry').hidden=this.value!=='walls';"><option value="rectangle">Rectangle (quick entry)</option><option value="walls">Wall measurements / shape</option></select></div></div><div id="rectEntry"><div class="grid"><div><label>Room name</label><input id="drawRoomName" value="Room 1"></div><div><label>Width (m)</label><input id="drawWidth" type="number" step=".01" min=".01" placeholder="3.65"></div><div><label>Length (m)</label><input id="drawLength" type="number" step=".01" min=".01" placeholder="4.20"></div></div></div><div id="wallEntry" hidden><p>Tap each corner in order. Each new edge snaps horizontal or vertical. Tap near the first corner to close the outline, then tap <b>Finish drawing</b> and enter actual wall measurements.</p><canvas id="sketchCanvas" width="800" height="500" style="width:100%;height:280px;background:#171717;border:1px solid #d7b56d;border-radius:12px;touch-action:none"></canvas><div class="grid"><button type="button" id="clearSketch">Clear drawing</button><button type="button" class="gold" id="finishSketch">Finish drawing</button></div><div id="wallRows"></div><div id="wallShapePreview" style="background:#171717;border-radius:12px;padding:8px;min-height:80px;margin:12px 0;color:white"></div></div><div style="background:#171717;border-radius:12px;padding:12px;margin:12px 0;display:flex;align-items:center;justify-content:center;height:240px"><div id="simpleRoomShape" style="border:3px solid #d7b56d;background:#d7b56d33;display:flex;align-items:center;justify-content:center;color:white">Enter dimensions</div></div><div class="stats"><div class="stat"><span class="muted">Area</span><b id="drawArea">—</b></div><div class="stat"><span class="muted">Perimeter</span><b id="drawPerimeter">—</b></div></div><button class="gold" id="drawSaveRoom" type="button">Save room</button><h3>🪜 Stairs — add to this site plan</h3><div class="grid"><div><label>Standard stair quantity</label><input id="stairQty" type="number" min="0" value="0"></div><div><label>Width (m)</label><input id="stairWidth" type="number" step=".01"></div><div><label>Cut length (m)</label><input id="stairLength" type="number" step=".01"></div></div><label><input id="bullnoseEnabled" type="checkbox" style="width:auto"> Include bullnose</label><div class="grid"><div><label>Bullnose quantity</label><input id="bullnoseQty" type="number" min="0" value="0" disabled></div><div><label>Bullnose width (m)</label><input id="bullnoseWidth" type="number" step=".01"></div><div><label>Bullnose cut length (m)</label><input id="bullnoseLength" type="number" step=".01"></div></div><h4>Individual winders</h4><div id="winderRows"></div><button type="button" class="gold" id="addWinder">+ Add winder</button><h4>Half landings</h4><div id="landingRows"></div><button type="button" class="gold" id="addLanding">+ Add 1/2 landing</button><button type="button" class="gold" id="saveLandings">Save half landings to site plan</button>
+<h4>Odd-shaped pieces (multiple per job)</h4><div id="oddPieceRows"></div><button type="button" class="gold" id="addOddPiece">+ Add odd-shaped piece</button><button type="button" class="gold" id="saveOddPieces">Save odd-shaped pieces to site plan</button>
+<button type="button" class="gold" id="saveStairs">Add stairs to site plan</button><p id="stairsSummary"></p><div id="drawRooms"></div><button class="gold" id="drawExport" type="button">Import rooms AND stairs into cutting planner</button><button id="drawPrint" type="button">Print / Save PDF</button><button class="remove" id="drawDeleteAll" type="button">Clear saved rooms</button></section></div><div id="page-vinyl" class="page" hidden>
+<section class="card"><h2>Vinyl calculator</h2><p class="muted">Enter each room’s measurements. The calculator automatically checks 2m, 3m and 4m rolls and chooses the narrowest width that fits all rooms.</p>
+<h3>Vinyl room measurements</h3><p class="muted">Add each room to calculate the total m² automatically.</p><div id="vinylRooms"></div><button type="button" class="gold" onclick="addMeasureRoom('vinylRooms')">+ Add room</button>
+<div class="grid">
+<div><label>Roll width</label><div style="padding:12px;border:1px solid #ddd;border-radius:8px;background:#f4f1e9">Automatic selection: 2m, 3m or 4m</div></div>
+<div><label>Vinyl price per m² (£)</label><input id="vinylPrice" type="number" min="0" step=".01" placeholder="0.00"></div>
+</div><div style="margin:12px 0;padding:12px;border:1px solid #ddd;border-radius:8px;background:#f4f1e9"><h3>Vinyl fitting</h3><label style="display:flex;align-items:center;gap:10px;font-size:15px;cursor:pointer"><input id="vinylFittingEnabled" type="checkbox" checked style="width:24px;height:24px;flex:0 0 24px"> Include fitting (£5 per m², £60 minimum)</label><p class="muted">Untick if the customer wants materials only.</p></div><button onclick="calcVinyl()">Calculate vinyl</button><div id="vinylResult" class="line"></div><button type="button" class="gold" onclick="saveSectionPdf('vinylResult','CWF Vinyl Quotation')">Save vinyl quotation as PDF</button></section>
+</div>
+<div id="page-laminate" class="page" hidden>
+<section class="card"><h2>Laminate calculator</h2><h3>Laminate room measurements</h3><p class="muted">Add each room; floor area and total perimeter are calculated automatically.</p><div id="lamRooms"></div><button type="button" class="gold" onclick="addMeasureRoom('lamRooms')">+ Add room</button><label style="display:flex;align-items:center;gap:8px;font-size:15px;margin:12px 0"><input id="lamWaste" type="checkbox" style="width:auto"> Add 20% extra for wastage</label><div class="grid">
+<div><label>Laminate pack coverage (m²)</label><input id="lamPackArea" type="number" min=".01" step=".01" placeholder="e.g. 2.2"></div>
+<div><label>Laminate MATERIAL PRICE per m² (£) — not per pack</label><input id="lamM2Price" type="number" min="0" step=".01" placeholder="0.00"></div>
+<div><label>Underlay price per m² (£)</label><input id="lamUnderlayM2Price" type="number" min="0" step=".01" placeholder="0.00"></div>
+<div><label>Laminate fitting price per m² (£)</label><input id="lamFitRate" type="number" min="0" step=".01" value="15"></div>
+</div><label style="display:flex;align-items:center;gap:8px;font-size:15px;margin:12px 0"><input id="lamBeading" type="checkbox" style="width:auto"> Include beading (£12 per 2.4m stick)</label><p class="muted">When selected, beading is calculated automatically from the room perimeter, rounded up to whole 2.4m sticks.</p><button onclick="calcLaminate()">Calculate laminate</button><div id="lamResult" class="line"></div><button type="button" class="gold" onclick="saveSectionPdf('lamResult','CWF Laminate Quotation')">Save laminate quotation as PDF</button></section>
+</div>
+<div id="page-lvt" class="page" hidden>
+<section class="card"><h2>LVT calculator</h2><h3>LVT room measurements</h3><p class="muted">Add each room to calculate the total m² automatically.</p><div id="lvtRooms"></div><button type="button" class="gold" onclick="addMeasureRoom('lvtRooms')">+ Add room</button><label style="display:flex;align-items:center;gap:8px;font-size:15px;margin:12px 0"><input id="lvtWaste" type="checkbox" style="width:auto"> Add 10% extra for wastage</label><div class="grid">
+<div><label>LVT pack coverage (m²)</label><input id="lvtPackArea" type="number" min=".01" step=".01" placeholder="e.g. 3.0"></div>
+<div><label>LVT MATERIAL PRICE per m² (£) — not per pack</label><input id="lvtM2Price" type="number" min="0" step=".01" placeholder="0.00"></div>
+<div><label>LVT fitting price per m² (£)</label><input id="lvtFitRate" type="number" min="0" step=".01" placeholder="Enter your rate"></div>
+</div><button onclick="calcLvt()">Calculate LVT</button><div id="lvtResult" class="line"></div><button type="button" class="gold" onclick="saveSectionPdf('lvtResult','CWF LVT Quotation')">Save LVT quotation as PDF</button></section>
+</div>
+<div id="page-prep" class="page" hidden>
+<section class="card"><h2>Screed, DPM and glue</h2><h3>Preparation room measurements</h3><p class="muted">Either add room measurements or enter a total m² directly (e.g. the area already calculated for LVT).</p><label style="display:flex;align-items:center;gap:8px;font-size:15px;margin:12px 0"><input id="prepDirectMode" type="checkbox" style="width:auto"> Enter total m² directly instead of room sizes</label><div id="prepRoomEntry"><div id="prepRooms"></div><button type="button" class="gold" onclick="addMeasureRoom('prepRooms')">+ Add room</button></div><div id="prepDirectEntry" hidden><label>Total preparation area (m²)</label><input id="prepDirectArea" type="number" min="0" step=".01" placeholder="Enter m²"></div><div class="grid">
+<div><label style="display:flex;align-items:center;gap:8px"><input id="screedEnabled" type="checkbox" style="width:auto"> Include screed (£17.50/m², £80 minimum)</label></div>
+<div><label style="display:flex;align-items:center;gap:8px"><input id="glueEnabled" type="checkbox" style="width:auto"> Include glue (£2/m²)</label></div>
+<div><label>DPM units (£200 each)</label><input id="dpmUnits" type="number" min="0" step="1" value="0"></div>
+<div><label style="display:flex;align-items:center;gap:8px"><input id="ply4mm" type="checkbox" style="width:auto"> Include 4mm ply (£18/m²)</label><small>2.88m² per sheet — charged per full sheet</small></div>
+<div><label style="display:flex;align-items:center;gap:8px"><input id="ply6mm" type="checkbox" style="width:auto"> Include 6mm ply (£20/m²)</label><small>2.88m² per sheet — charged per full sheet</small></div>
+</div><p class="muted">Tick screed and/or glue only when required. Screed: £17.50/m² (£80 minimum). Glue: £2/m². DPM: £200 per unit. Ply is charged by full 2.88m² sheets.</p><button onclick="calcPrep()">Calculate preparation</button><div id="prepResult" class="line"></div><button type="button" class="gold" onclick="saveSectionPdf('prepResult','CWF Preparation Quotation')">Save preparation quotation as PDF</button></section>
+</div>
+<div id="page-contracts" class="page" hidden><section class="card"><h2>Contract flooring / Safety floor</h2><p>2m roll calculation. For 4m × 4m, it calculates two strips, 2m × 8m total.</p><div id="contractRooms"></div><button type="button" onclick="addMeasureRoom('contractRooms')">+ Add room</button><div class="grid"><div><label>Material £/m²</label><input id="contractPrice" type="number" step=".01"></div><div><label>Fitting £/m²</label><input id="contractFitRate" type="number" step=".01"></div></div><label><input id="contractCapCove" type="checkbox" style="width:auto"> Cap and cove £6 per linear metre (£3 materials + £3 fitting)</label><label><input id="contractWetRoom" type="checkbox" style="width:auto"> Wet room surcharge £100</label><button type="button" onclick="calcContracts()">Calculate</button><div id="contractResult" class="line"></div></section></div><div id="page-tiles" class="page" hidden><section class="card"><h2>Carpet tiles</h2><div id="tileRooms"></div><button type="button" onclick="addMeasureRoom('tileRooms')">+ Add room</button><div class="grid"><div><label>Tile size</label><input id="tileSize" placeholder="e.g. 500 x 500mm"></div><div><label>Pack coverage m²</label><input id="tilePack" type="number" step=".01"></div><div><label>Material £/m²</label><input id="tilePrice" type="number" step=".01"></div><div><label>Fitting £/m²</label><input id="tileFit" type="number" step=".01"></div></div><button type="button" onclick="calcTiles()">Calculate</button><div id="tileResult" class="line"></div></section></div><div id="page-uplift" class="page" hidden><section class="card"><h2>Uplift / Removal Calculator</h2><p class="muted">Add multiple rooms and different flooring types to calculate removal together.</p><div id="upliftItems"></div><button type="button" class="gold" onclick="addUpliftItem()">+ Add room / m²</button><button type="button" onclick="calcUplift()">Calculate uplift</button><div id="upliftResult" class="line"></div></section></div><div id="page-quote" class="page" hidden>
+<section class="card"><h2>Full job quotation</h2><p class="muted">Each calculator adds its total here. You can use more than one flooring type on the same job.</p><div class="grid"><div><label>Materials discount (%)</label><input id="materialsDiscount" type="number" min="0" max="100" step=".1" value="0" oninput="renderQuote()"></div><div><label>Fitting discount (%)</label><input id="fittingDiscount" type="number" min="0" max="100" step=".1" value="0" oninput="renderQuote()"></div><div><label>Round fitting price to</label><select id="fitRounding" onchange="renderQuote()"><option value="5" selected>Nearest £5</option><option value="10">Nearest £10</option><option value="1">No rounding</option></select></div></div><div id="quoteBreakdown"></div><h2 id="fullTotal">Full job total: £0.00</h2><button type="button" class="gold" onclick="saveCurrentQuote()">💾 Save quotation</button><button type="button" class="gold" onclick="openCustomerQuote()">Customer quotation (prices only)</button><button type="button" onclick="openFitterPlan()">Fitter cutting plan (measurements)</button><h3>Saved quotations</h3><div id="savedQuotes"></div></section>
+</div>
+<p class="muted" style="text-align:center">CWF Cutting Planner · Check all measurements before cutting.</p>
+<div class="no-print" style="padding:16px"><button class="gold" style="width:100%;font-size:20px" onclick="showPage('quote')">FINAL PRICE / QUOTATION</button></div></main>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.2/jspdf.umd.min.js"></script>
+<script>
+const list=document.getElementById('rooms');
+let roomFieldCounter=0;
+function addRoom(){
+ const n=++roomFieldCounter;
+ const row=document.createElement('div');row.className='room';
+ row.innerHTML='<div><label>Room name</label><input class="name" name="cwf_room_name_'+n+'" placeholder="Room name" autocomplete="off" autocorrect="off" autocapitalize="words" spellcheck="false" value="" readonly></div><div><label>Width (m)</label><input class="w" name="cwf_room_width_'+n+'" type="number" autocomplete="off" value="" min=".01" step=".01" placeholder="0.00" readonly></div><div><label>Length (m)</label><input class="l" name="cwf_room_length_'+n+'" type="number" autocomplete="off" value="" min=".01" step=".01" placeholder="0.00" readonly></div><button class="remove no-print" type="button" aria-label="Remove room">×</button>';
+ row.querySelector('button').onclick=()=>row.remove();
+ list.appendChild(row);
+ row.querySelectorAll('input').forEach(input=>{
+   input.value='';input.defaultValue='';input.setAttribute('autocomplete','off');
+   input.addEventListener('focus',()=>input.removeAttribute('readonly'),{once:true});
+ });
+}
+addRoom();document.getElementById('add').onclick=addRoom;document.getElementById('date').value=new Date().toISOString().slice(0,10);
+['standardPlates','specialPlates'].forEach(id=>document.getElementById(id).addEventListener('input',()=>{const s=Math.max(0,Math.floor(Number(document.getElementById('standardPlates').value)||0)),p=Math.max(0,Math.floor(Number(document.getElementById('specialPlates').value)||0)),plates=s*5+p*15;document.getElementById('plateCost').textContent='£'+plates.toFixed(2);if(document.getElementById('result').hidden){quoteTotals.carpet=plates;fittingTotals.carpet=0;window.cwfCarpetQuoteLines=[];if(s)window.cwfCarpetQuoteLines.push({label:'Standard doorplates ('+s+')',amount:'£'+(s*5).toFixed(2)});if(p)window.cwfCarpetQuoteLines.push({label:'Special doorplates ('+p+')',amount:'£'+(p*15).toFixed(2)});renderQuote();}else{document.getElementById('calc').click();}}));
+
+// CWF Notes import: parse typed measurements and OCR text from screenshots.
+(function(){
+ const textBox=document.getElementById('notesImportText'),imageInput=document.getElementById('notesImage'),status=document.getElementById('notesOcrStatus'),preview=document.getElementById('notesPreview'),importBtn=document.getElementById('importNotes');
+ let parsed=[];
+ function toMetres(raw,unit){
+  let n=Number(raw);if(!Number.isFinite(n)||n<=0)return 0;
+  unit=(unit||'').toLowerCase();
+  if(unit==='mm')return n/1000;if(unit==='cm')return n/100;
+  if(!unit&&n>=100)return n/1000; // large bare values assumed millimetres
+  return n;
+ }
+ function extractPairs(line){
+  const re=/(\d+(?:\.\d+)?)\s*(mm|cm|m)?\s*[x×]\s*(\d+(?:\.\d+)?)\s*(mm|cm|m)?/gi;
+  let m,out=[];while((m=re.exec(line))){let a=toMetres(m[1],m[2]),b=toMetres(m[3],m[4]);if(a>0&&b>0)out.push([a,b]);}return out;
+ }
+ function parseNotes(raw){
+  const rows=[],lines=raw.split(/[\n;]+/).map(x=>x.trim()).filter(Boolean);
+  for(let line of lines){
+   const pairs=extractPairs(line);if(!pairs.length)continue;
+   let name=(line.match(/^([A-Za-z][A-Za-z0-9 '\/-]{0,30})/)?line.match(/^([A-Za-z][A-Za-z0-9 '\/-]{0,30})/)[1].trim():'Room';
+   name=name.replace(/\b(mm|cm|m)\b/ig,'').trim()||'Room';
+   pairs.forEach((p,i)=>rows.push({name:i===0?name:name+' - extra section',w:p[0],l:p[1],source:line}));
+  }
+  return rows;
+ }
+ function showPreview(){
+  parsed=parseNotes(textBox.value);preview.innerHTML='';
+  if(!parsed.length){preview.innerHTML='<div class="notice">No measurements recognised yet. Try formats like <b>Lounge 6.9 x 3.1</b> or <b>Bedroom 4200 x 3600</b>.</div>';importBtn.hidden=true;return;}
+  preview.innerHTML='<div class="planDetails"><b>Review before importing</b>'+parsed.map((r,i)=>'<div class="line"><b>'+ (i+1)+'. '+esc(r.name)+'</b> — '+r.w.toFixed(2)+' × '+r.l.toFixed(2)+'m ('+(r.w*r.l).toFixed(2)+'m²)<br><small>'+esc(r.source)+'</small></div>').join('')+'</div>';
+  importBtn.hidden=false;
+ }
+ document.getElementById('parseNotes').onclick=showPreview;
+ document.getElementById('clearNotes').onclick=()=>{textBox.value='';imageInput.value='';preview.innerHTML='';parsed=[];importBtn.hidden=true;status.textContent='Paste text, or choose a screenshot to read its text.'};
+ async function readImage(){
+  const file=imageInput.files&&imageInput.files[0];if(!file){status.textContent='Choose a screenshot first.';alert('Choose a screenshot of your Notes first.');return;}
+  status.textContent='Starting text recognition…';
+  try{
+   if(!window.Tesseract){await new Promise((resolve,reject)=>{let sc=document.createElement('script');sc.src='https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js';sc.onload=resolve;sc.onerror=reject;document.head.appendChild(sc);});}
+   status.textContent='Reading screenshot…';
+   const result=await Tesseract.recognize(file,'eng',{logger:m=>{if(m.status==='recognizing text')status.textContent='Reading screenshot: '+Math.round((m.progress||0)*100)+'%';}});
+   textBox.value=result.data.text||'';status.textContent='Finished reading. Tap Preview measurements below.';
+  }catch(e){status.textContent='OCR could not start. Paste the text from Notes instead.';alert('Screenshot reading failed. Please paste the Notes text into the box.');}
+ }
+ document.getElementById('readNotesImage').onclick=readImage;
+ imageInput.onchange=()=>{status.textContent=imageInput.files&&imageInput.files[0]?'Screenshot selected. Tap Read screenshot.':'Choose a screenshot.';};
+ importBtn.onclick=()=>{
+  if(!parsed.length){showPreview();return;}
+  // Add only reviewed entries; do not clear existing job measurements.
+  parsed.forEach(r=>{addRoom();const row=list.lastElementChild;row.querySelector('.name').value=r.name;row.querySelector('.w').value=r.w.toFixed(2);row.querySelector('.l').value=r.l.toFixed(2);row.querySelectorAll('input').forEach(x=>x.removeAttribute('readonly'));});
+  showPage('carpet');document.getElementById('result').hidden=true;
+  alert('Imported '+parsed.length+' measurement(s). Check the room list, then Calculate cutting plan.');
+ };
+})();
+
+document.getElementById('calc').onclick=()=>{ const __layoutDiag=document.getElementById('layout'); if(__layoutDiag)__layoutDiag.innerHTML='<div style="padding:10px;background:#fff4d6;border:2px solid #b99b54;border-radius:8px"><b>Cutting calculation started…</b></div>'; try {
+ const price=Number(document.getElementById('price').value)||0;
+ const underlayEnabled=document.getElementById('underlayEnabled').checked;
+ const underlayPrice=Number(document.getElementById('underlayPrice').value)||0;
+ const standardPlates=Math.max(0,Math.floor(Number(document.getElementById('standardPlates').value)||0));
+ const specialPlates=Math.max(0,Math.floor(Number(document.getElementById('specialPlates').value)||0));
+ const stairsEnabled=document.getElementById('stairsEnabled').checked, hallEnabled=document.getElementById('hallEnabled').checked, wrapStairsEnabled=document.getElementById('wrapStairsEnabled').checked, doubleStairsEnabled=document.getElementById('doubleStairsEnabled').checked;
+ const raw=[...list.querySelectorAll('.room')].map((r,i)=>{const name=r.querySelector('.name').value.trim()||'Room '+(i+1);const fixed=r.dataset.cwfFixedPile==='true'||/\b(Landing|Stair|Bullnose|Winder)\b/i.test(name);return {name,w:Number(r.querySelector('.w').value),l:Number(r.querySelector('.l').value),index:i,fixedPile:fixed,kind:r.dataset.cwfKind||'',shape:r.dataset.cwfShape?JSON.parse(r.dataset.cwfShape):null,area:Number(r.dataset.cwfArea)||0};}).filter(r=>r.w>0&&r.l>0);
+ if(!raw.length){alert('Enter at least one room with valid measurements.');return}
+ function makePlan(roll){
+   const valid=raw.filter(r=>(r.fixedPile||r.shape&&r.shape.length>=3)?r.w<=roll+0.00001:Math.min(r.w,r.l)<=roll+0.00001);
+   const sorted=[...valid].sort((a,b)=>(b.w*b.l-a.w*a.l));
+   let shelves=[];
+   if(sorted.length<=10){
+     let bestLength=Infinity,bestShelves=null;
+     function searchPacking(pos,current){
+       const usedLength=current.reduce((sum,sh)=>sum+sh.height,0);
+       if(usedLength>=bestLength-0.000001)return;
+       if(pos===sorted.length){
+         bestLength=usedLength;
+         bestShelves=current.map(sh=>({height:sh.height,used:sh.used,items:sh.items.map(x=>({...x}))}));
+         return;
+       }
+       const room=sorted[pos];
+       const opts=(room.shape&&room.shape.length>=3?[{across:room.w,run:room.l,rotated:false,shape:room.shape}]:room.fixedPile?[{across:room.w,run:room.l,rotated:false}]:[{across:room.w,run:room.l,rotated:false},{across:room.l,run:room.w,rotated:true}]).filter(o=>o.across<=roll+0.00001);
+       for(let si=0;si<current.length;si++){
+         const sh=current[si];
+         for(const o of opts){
+           if(o.across<=roll-sh.used+0.00001){
+             const next=current.map(x=>({height:x.height,used:x.used,items:[...x.items]}));
+             next[si].height=Math.max(next[si].height,o.run);const acrossStart=next[si].used;next[si].used+=o.across;
+             next[si].items.push({...room,...o,acrossStart});searchPacking(pos+1,next);
+           }
+         }
+       }
+       for(const o of opts){
+         const next=current.map(x=>({height:x.height,used:x.used,items:[...x.items]}));
+         next.push({height:o.run,used:o.across,items:[{...room,...o,acrossStart:0}]});searchPacking(pos+1,next);
+       }
+     }
+     searchPacking(0,[]);shelves=bestShelves||[];
+   }else{
+     for(const room of sorted){
+       const opts=(room.shape&&room.shape.length>=3?[{across:room.w,run:room.l,rotated:false,shape:room.shape}]:room.fixedPile?[{across:room.w,run:room.l,rotated:false}]:[{across:room.w,run:room.l,rotated:false},{across:room.l,run:room.w,rotated:true}]).filter(o=>o.across<=roll+0.00001);
+       let best=null;
+       for(let si=0;si<shelves.length;si++)for(const o of opts){
+         const sh=shelves[si];if(o.across<=roll-sh.used+0.00001){
+           const score=Math.max(0,o.run-sh.height)*100000+(roll-sh.used-o.across);
+           if(!best||score<best.score)best={si,o,score};
+         }
+       }
+       if(best){const sh=shelves[best.si];sh.height=Math.max(sh.height,best.o.run);sh.items.push({...room,...best.o,acrossStart:sh.used});sh.used+=best.o.across;}
+       else if(opts.length){opts.sort((a,b)=>a.run-b.run);const o=opts[0];shelves.push({height:o.run,used:o.across,items:[{...room,...o,acrossStart:0}]});}
+     }
+   }
+   let placed=shelves.flatMap(s=>s.items);
+   function shapeOffcuts(poly,bw,bl){if(!poly||poly.length<3)return [];const xs=[0,bw,...poly.map(p=>Math.max(0,Math.min(bw,p[0])))].sort((a,b)=>a-b).filter((v,i,a)=>i===0||Math.abs(v-a[i-1])>1e-5),rects=[];for(let i=0;i<xs.length-1;i++){const x1=xs[i],x2=xs[i+1],xm=(x1+x2)/2;if(x2-x1<1e-5)continue;const ys=[];for(let j=0;j<poly.length;j++){const a=poly[j],b=poly[(j+1)%poly.length];if((a[0]<=xm&&b[0]>xm)||(b[0]<=xm&&a[0]>xm))ys.push(a[1]+(xm-a[0])*(b[1]-a[1])/(b[0]-a[0]));}ys.sort((a,b)=>a-b);let inside=[],cursor=0;for(let k=0;k+1<ys.length;k+=2)inside.push([ys[k],ys[k+1]]);let gaps=[];inside.forEach(([lo,hi])=>{lo=Math.max(0,lo);hi=Math.min(bl,hi);if(lo>cursor+1e-5)gaps.push([cursor,lo]);cursor=Math.max(cursor,hi);});if(cursor<bl-1e-5)gaps.push([cursor,bl]);gaps.forEach(([y1,y2])=>{const found=rects.find(r=>Math.abs(r.x2-x1)<1e-5&&Math.abs(r.y1-y1)<1e-5&&Math.abs(r.y2-y2)<1e-5);if(found)found.x2=x2;else rects.push({x1,x2,y1,y2});});}return rects.map(r=>({x:r.x1,y:r.y1,w:r.x2-r.x1,l:r.y2-r.y1})).filter(r=>r.w>.02&&r.l>.02);}
+   const nestedIds=new Set();
+   placed.filter(p=>p.shape&&p.shape.length>=3).forEach(landing=>{
+     landing.nested=[];
+     shapeOffcuts(landing.shape,landing.w,landing.l).forEach(off=>{
+       placed.filter(p=>/^(Stair|Bullnose|Winder)\b/i.test(p.name)&&!nestedIds.has(p.index)&&p.fixedPile).forEach(stair=>{
+         if(stair.w<=off.w+1e-5&&stair.l<=off.l+1e-5){
+           const nx=Math.floor((off.w+1e-5)/stair.w),ny=Math.floor((off.l+1e-5)/stair.l);
+           for(let y=0;y<ny&&!nestedIds.has(stair.index);y++){
+             for(let x=0;x<nx&&!nestedIds.has(stair.index);x++){
+               nestedIds.add(stair.index);
+               landing.nested.push({name:stair.name,w:stair.w,l:stair.l,x:off.x+x*stair.w,y:off.y+y*stair.l,index:stair.index});
+             }
+           }
+         }
+       });
+     });
+   });
+   if(nestedIds.size){shelves.forEach(sh=>{sh.items=sh.items.filter(x=>!nestedIds.has(x.index));let cursor=0;sh.items.forEach(x=>{x.acrossStart=cursor;cursor+=x.across;});sh.used=cursor;sh.height=sh.items.reduce((h,x)=>Math.max(h,x.run),0);});shelves=shelves.filter(sh=>sh.items.length);placed=placed.filter(p=>!nestedIds.has(p.index));placed.push(...raw.filter(p=>nestedIds.has(p.index)).map(p=>({...p,nestedInto:placed.find(l=>l.nested&&l.nested.some(n=>n.index===p.index))?.index})));}
+   // Remaining ordinary stairs are grouped into strips of five. Any stairs
+   // already nested into landing offcuts remain individual pieces.
+   const remainingStairs=placed.filter(p=>p.nestedInto===undefined&&/^(Stair) \d+$/i.test(p.name)&&p.fixedPile);
+   if(remainingStairs.length){
+     const stairKeys=new Set(remainingStairs.map(p=>p.index));
+     const others=placed.filter(p=>!stairKeys.has(p.index));
+     const grouped=[];
+     const sortedStairs=[...remainingStairs].sort((a,b)=>a.index-b.index);
+     for(let i=0;i<sortedStairs.length;i+=6){const batch=sortedStairs.slice(i,i+6),first=batch[0];grouped.push({...first,name:'Stairs '+batch[0].name.replace(/\D/g,'')+'-'+batch[batch.length-1].name.replace(/\D/g,'')+' (strip)',w:first.w,l:first.l*batch.length,run:first.l*batch.length,across:first.w,area:batch.reduce((s,p)=>s+p.w*p.l,0),indices:batch.map(p=>p.index),stairCount:batch.length,fixedPile:true,rotated:false,shape:null});}
+     const candidates=[...others,...grouped].sort((a,b)=>(b.w*b.l-a.w*a.l));const newShelves=[];
+     candidates.forEach(item=>{const opts=item.fixedPile?[{across:item.w,run:item.l,rotated:false}]:[{across:item.w,run:item.l,rotated:false},{across:item.l,run:item.w,rotated:true}].filter(o=>o.across<=roll+1e-5);let choice=null;newShelves.forEach((sh,si)=>opts.forEach(o=>{if(o.across<=roll-sh.used+1e-5){const score=Math.max(0,o.run-sh.height)*100000+(roll-sh.used-o.across);if(!choice||score<choice.score)choice={si,o,score};}}));if(choice){const sh=newShelves[choice.si];sh.height=Math.max(sh.height,choice.o.run);sh.items.push({...item,...choice.o,acrossStart:sh.used});sh.used+=choice.o.across;}else if(opts.length){opts.sort((a,b)=>a.run-b.run);const o=opts[0];newShelves.push({height:o.run,used:o.across,items:[{...item,...o,acrossStart:0}]});}});
+     shelves=newShelves;placed=shelves.flatMap(s=>s.items).concat(placed.filter(p=>p.nestedInto!==undefined));
+   }
+   const total=shelves.reduce((sum,sh)=>sum+sh.height,0);
+   const supplied=total*roll;
+   const area=placed.reduce((sum,r)=>sum+(r.area||r.w*r.l),0);
+   return {roll,valid,placed,shelves,total,supplied,area,waste:Math.max(0,supplied-area),nestedIndexes:Array.from(nestedIds)};
+ }
+ const plans=[makePlan(4),makePlan(5)];
+ // Prefer a plan that places every piece. For complete plans, minimise purchased
+ // area/waste first, then linear metres; choose 4m only when equally efficient.
+ plans.sort((a,b)=>{
+   const aComplete=a.placed.length===raw.length,bComplete=b.placed.length===raw.length;
+   if(aComplete!==bComplete)return bComplete-aComplete;
+   if(a.placed.length!==b.placed.length)return b.placed.length-a.placed.length;
+   if(Math.abs(a.waste-b.waste)>0.00001)return a.waste-b.waste;
+   if(Math.abs(a.total-b.total)>0.00001)return a.total-b.total;
+   return a.roll-b.roll;
+ });
+ const plan=plans[0],roll=plan.roll,shelves=plan.shelves,placed=plan.placed,total=plan.total;
+ const placedByIndex=new Map();placed.forEach(r=>{(r.indices||[r.index]).forEach(idx=>placedByIndex.set(idx,r));});
+ const nestedIndexSet=new Set([...(plan.nestedIndexes||[]),...placed.filter(p=>p.nestedInto!==undefined).map(p=>p.index),...shelves.flatMap(sh=>sh.items.flatMap(x=>(x.nested||[]).map(n=>n.index))) ]);
+ const rows=raw.map(r=>{const p=placedByIndex.get(r.index);const name=String(r.name||'');const stairName=name.startsWith('Stair ')||name.startsWith('Bullnose ')||name.startsWith('Winder ');if(stairName&&nestedIndexSet.has(r.index))return {...r,ok:true,nested:true,across:r.w,run:r.l};if(p)return {...p,ok:true};return {...r,ok:false};});
+ const invalid=rows.filter(r=>!r.ok); if(!shelves.length){document.getElementById('layout').innerHTML='<p class="notice">No pieces could be placed on either roll. At least one drawn shape may be wider or longer than the available roll. Check its measured dimensions and pile direction.</p>';}
+ document.getElementById('result').hidden=false;
+ document.getElementById('metres').textContent=total.toFixed(2)+' m';
+ document.getElementById('supplied').textContent=plan.supplied.toFixed(2)+' m²';
+ document.getElementById('roomarea').textContent=plan.area.toFixed(2)+' m²';
+ const carpetCost=plan.supplied*price;
+ const underlayArea=plan.area;
+ const underlayCost=underlayEnabled?underlayArea*underlayPrice:0;
+ const plateCost=standardPlates*5+specialPlates*15;
+ const grandTotal=carpetCost+underlayCost+plateCost;
+ window.cwfCarpetQuoteLines=[{label:'Carpet',amount:'£'+carpetCost.toFixed(2)}];if(underlayEnabled)window.cwfCarpetQuoteLines.push({label:'Underlay',amount:'£'+underlayCost.toFixed(2)});if(standardPlates)window.cwfCarpetQuoteLines.push({label:'Standard doorplates ('+standardPlates+')',amount:'£'+(standardPlates*5).toFixed(2)});if(specialPlates)window.cwfCarpetQuoteLines.push({label:'Special doorplates ('+specialPlates+')',amount:'£'+(specialPlates*15).toFixed(2)});
+ const fittingMaterialArea=plan.supplied; const fittingRate=5; const baseRoomFitting=Math.max(60,fittingMaterialArea*fittingRate); const fittingCost=baseRoomFitting+(hallEnabled?30:0)+(wrapStairsEnabled?100:0)+(doubleStairsEnabled?80:0)+(stairsEnabled?Math.max(50,100-baseRoomFitting):0);
+ const jobTotal=grandTotal+fittingCost;
+ quoteTotals.carpet=jobTotal; fittingTotals.carpet=fittingCost;
+ document.getElementById('cost').textContent='£'+carpetCost.toFixed(2);
+ document.getElementById('underlayCost').textContent='£'+underlayCost.toFixed(2);
+ document.getElementById('plateCost').textContent='£'+plateCost.toFixed(2);
+ document.getElementById('grandTotal').textContent='£'+grandTotal.toFixed(2);
+ document.getElementById('fittingCost').textContent='£'+fittingCost.toFixed(2);
+ document.getElementById('jobTotal').textContent='£'+jobTotal.toFixed(2);
+ document.getElementById('count').textContent=placed.length+' / '+raw.length;
+ document.getElementById('waste').textContent=plan.waste.toFixed(2)+' m²';
+ const job=esc(document.getElementById('customer').value||'CWF job'),date=esc(document.getElementById('date').value||'');
+ const __cutRowsHtml=Array.from(rows||[]).map((r,i)=>{const across=Number(r&&r.across),run=Number(r&&r.run);return '<div class="line"><b>'+(i+1)+'. '+esc(String(r&&r.name||'Unnamed cut'))+'</b><br>'+(r&&r.ok&&r.nested?'Nested into landing offcut — '+across.toFixed(2)+'m × '+run.toFixed(2)+'m':r&&r.ok&&Number.isFinite(across)&&Number.isFinite(run)?across.toFixed(2)+'m across × '+run.toFixed(2)+'m long':'<span style="color:#a33">Does not fit either roll width or placement measurements missing</span>')+'</div>';}).join(''); const __cutDebug='<details style="margin-top:12px"><summary>Placement diagnostics</summary><pre style="white-space:pre-wrap;font-size:12px">'+esc(JSON.stringify({raw:raw.map(x=>({index:x.index,name:x.name,w:x.w,l:x.l})),placed:plan.placed.map(x=>({index:x.index,indices:x.indices,name:x.name,nestedInto:x.nestedInto,across:x.across,run:x.run})),nestedIndexes:plan.nestedIndexes,shelfNested:plan.shelves.flatMap(sh=>sh.items.flatMap(x=>(x.nested||[]).map(n=>({landing:x.name,stair:n.name,index:n.index}))))},null,2))+'</pre></details>'; document.getElementById('cuts').innerHTML='<p><b>'+job+'</b> · '+date+' · Recommended '+roll+'m roll</p>'+__cutRowsHtml+'<p><b>Total roll length: '+total.toFixed(2)+' linear metres on '+roll+'m roll</b></p>'+__cutDebug;
+ function renderRollLayout(p){
+  if(!p)return '<div class="notice">Roll plan missing.</div>';
+  const rollWidth=Number(p.roll)||4,sections=Array.isArray(p.shelves)?p.shelves:[];
+  let out='<section class="card" style="margin:12px 0;padding:12px"><h3>'+rollWidth+'m roll · '+Number(p.total||0).toFixed(2)+' linear metres</h3><p><b>Sections:</b> '+sections.length+' · <b>Pieces placed (including nested offcut cuts):</b> '+sections.reduce((n,section)=>n+(Array.isArray(section.items)?section.items.reduce((m,item)=>m+1+(Array.isArray(item.nested)?item.nested.length:0),0):0),0)+'</p>';
+  if(!sections.length)return out+'<p>No cuts placed on this roll.</p></section>';
+  sections.forEach((sh,i)=>{
+   const length=Math.max(.01,Number(sh.height)||.01),items=Array.isArray(sh.items)?sh.items:[];
+   out+='<div style="margin:14px 0;border:1px solid #b9a16a;border-radius:8px;padding:10px;background:#faf8f2"><b>Section '+(i+1)+' · '+length.toFixed(2)+'m long</b><div style="display:flex;flex-direction:row;width:100%;min-height:110px;border:3px solid #222;background:#eee;margin-top:8px;overflow:hidden">';
+   items.forEach(x=>{
+    const across=Math.max(0,Number(x.across)||Number(x.w)||0),run=Math.max(0,Number(x.run)||Number(x.l)||0),pct=Math.max(0,Math.min(100,across/rollWidth*100));
+    if(pct>0)out+='<div style="flex:0 0 '+pct+'%;width:'+pct+'%;min-width:0;min-height:110px;background:#d7b56d;border-right:2px solid #57431f;display:flex;align-items:center;justify-content:center;text-align:center;padding:4px;overflow:hidden;color:#222;font-size:11px"><div><b>'+esc(String(x.name||'Cut'))+'</b><br>'+across.toFixed(2)+'m across<br>'+run.toFixed(2)+'m long</div></div>';
+   });
+   out+='</div><div class="offcut">Used width: '+Number(sh.used||0).toFixed(2)+'m of '+rollWidth+'m · Unused width: '+Math.max(0,rollWidth-(Number(sh.used)||0)).toFixed(2)+'m</div>';
+   items.forEach(x=>{if(Array.isArray(x.nested)&&x.nested.length){out+='<p><b>Nested offcut cuts:</b></p>'+x.nested.map(n=>'<div class="line">'+esc(String(n.name||'Cut'))+' — '+Number(n.w||0).toFixed(2)+'m × '+Number(n.l||0).toFixed(2)+'m</div>').join('')}});
+   out+='</div>';
+  });
+  return out+'</section>';
+ }
+ const layoutEl=document.getElementById('layout');
+ try {
+   layoutEl.innerHTML='<div style="padding:10px;background:#e8f5e9;border:1px solid #4caf50;border-radius:8px;margin-bottom:10px"><b>Roll layout renderer started</b> · '+plans.length+' plans · '+raw.length+' input pieces · '+plans.map(p=>p.roll+'m: '+p.shelves.length+' sections').join(' · ')+'</div>';
+   const textPlan=plans.map(p=>'<div class="line"><b>'+p.roll+'m roll — '+p.total.toFixed(2)+' linear metres ('+p.shelves.length+' sections)</b>'+p.shelves.map((sh,i)=>'<p><b>Section '+(i+1)+' — '+sh.height.toFixed(2)+'m length; '+p.roll+'m roll width</b><br>'+sh.items.map(x=>esc(x.name)+' — '+x.across.toFixed(2)+'m across × '+x.run.toFixed(2)+'m long').join('<br>')+'<br>Unused width: '+Math.max(0,p.roll-sh.used).toFixed(2)+'m</p>').join('')+'</div>').join('');
+   const html='<p><b>Both roll widths compared. Recommended: '+roll+'m roll.</b></p>'+textPlan+renderRollLayout(plans.find(p=>p.roll===4))+renderRollLayout(plans.find(p=>p.roll===5));
+   layoutEl.innerHTML=html;
+   if(!layoutEl.innerHTML.trim())throw new Error('HTML output was empty after insertion');
+ } catch(renderError) {
+   layoutEl.innerHTML='<div style="padding:12px;background:#fff0f0;border:2px solid #c00;border-radius:8px;color:#900"><b>Roll layout error:</b><br>'+esc(String(renderError&&renderError.stack||renderError))+'</div><p><b>Diagnostic:</b> plans='+plans.length+'; raw pieces='+raw.length+'; '+plans.map(p=>p.roll+'m roll: '+p.shelves.length+' sections, '+p.placed.length+' placed, total '+p.total).join('; ')+'</p>';
+ }
+ const notice=document.querySelector('.notice');
+ notice.textContent=invalid.length?'These rooms do not fit either the 4m or 5m roll in either direction: '+invalid.map(r=>r.name).join(', ')+'. Check measurements or consider a different solution.':'Automatic comparison selected the option that fits the most rooms, then uses the least total carpet area. Check pile direction, pattern repeats, matching, doorway turns and fitting allowances before ordering or cutting.';
+ } catch(__calcError) { const __e=document.getElementById('layout'); if(__e)__e.innerHTML='<div style="padding:12px;background:#fff0f0;border:2px solid #c00;border-radius:8px;color:#900"><b>Cutting calculation failed:</b><pre style="white-space:pre-wrap">'+esc(String(__calcError&&__calcError.stack||__calcError))+'</pre></div>'; console.error('CWF carpet cutting calculation error',__calcError); }
+}
+
+const quoteTotals={carpet:0,vinyl:0,laminate:0,lvt:0,prep:0,uplift:0};
+const fittingTotals={carpet:0,vinyl:0,laminate:0,lvt:0,uplift:0};
+const quoteLabels={carpet:'Carpet',vinyl:'Vinyl',laminate:'Laminate',lvt:'LVT',prep:'Screed / DPM / Glue',uplift:'Uplift / removal'};
+function showPage(name){document.querySelectorAll('.page').forEach(p=>p.hidden=true);document.getElementById('page-'+name).hidden=false;const buttonLabels={carpet:'Carpet',drawing:'Site Drawing',vinyl:'Vinyl',laminate:'Laminate',lvt:'LVT',prep:'Screed / DPM / Glue',contracts:'Contract flooring',tiles:'Carpet tiles',uplift:'Uplift / Removal'};document.getElementById('pageNav').querySelectorAll('button').forEach(b=>b.style.background=b.textContent.trim()===buttonLabels[name]?'#d7b56d':'#171717');if(name==='quote')renderQuote();if(name==='drawing'&&window.resizeDrawingCanvas)window.resizeDrawingCanvas();window.scrollTo(0,0)}
+window.showPage=showPage;
+
+function addMeasureRoom(containerId){
+ const list=document.getElementById(containerId);
+ const row=document.createElement('div');row.className='room measure-room';
+ row.innerHTML='<div><label>Room name</label><input class="measure-name" placeholder="Room name" autocomplete="off"></div><div><label>Width (m)</label><input class="measure-w" type="number" min=".01" step=".01" placeholder="0.00"></div><div><label>Length (m)</label><input class="measure-l" type="number" min=".01" step=".01" placeholder="0.00"></div><button type="button" class="remove" aria-label="Remove room">×</button>';
+ row.querySelector('button').onclick=()=>row.remove();list.appendChild(row);
+}
+function measureRooms(containerId){
+ const rows=[...document.getElementById(containerId).querySelectorAll('.measure-room')];
+ const rooms=rows.map((r,i)=>({name:r.querySelector('.measure-name').value.trim()||('Room '+(i+1)),w:Number(r.querySelector('.measure-w').value)||0,l:Number(r.querySelector('.measure-l').value)||0})).filter(r=>r.w>0&&r.l>0);
+ return {rooms,area:rooms.reduce((s,r)=>s+r.w*r.l,0),perimeter:rooms.reduce((s,r)=>s+2*(r.w+r.l),0)};
+}
+function val(id){return Math.max(0,Number(document.getElementById(id).value)||0)}
+function money(n){return '£'+n.toFixed(2)}
+function saveQuote(key,total,detail,fitting=0){quoteTotals[key]=total;if(key in fittingTotals)fittingTotals[key]=fitting;document.getElementById(key==='carpet'?'result':key==='vinyl'?'vinylResult':key==='laminate'?'lamResult':key==='lvt'?'lvtResult':key==='contracts'?'contractResult':key==='tiles'?'tileResult':'prepResult').innerHTML=detail+'<br><b>Section total: '+money(total)+'</b>';renderQuote()}
+function getSavedQuotes(){try{return JSON.parse(localStorage.getItem('cwf_saved_quotes')||'[]')}catch(e){return []}}
+function saveCurrentQuote(){
  try{
-  if(!window.Tesseract){status.textContent='Loading OCR engine…';await new Promise((ok,no)=>{const sc=document.createElement('script');sc.src='https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js';sc.onload=ok;sc.onerror=no;document.head.appendChild(sc);});}
-  status.textContent='Reading screenshot…';
-  const result=await window.Tesseract.recognize(file,'eng',{logger:m=>{if(m.status==='recognizing text')status.textContent='OCR '+Math.round((m.progress||0)*100)+'%';}});
-  box.value=result.data.text||'';status.textContent='OCR finished. Now tap Preview measurements.';
- }catch(e){status.textContent='OCR failed: '+(e&&e.message?e.message:'unknown error')+'. Try pasting text instead.';}
+  const customer=(document.getElementById('customer').value||'Unnamed customer').trim();
+  const date=document.getElementById('date').value||new Date().toISOString().slice(0,10);
+  const total=getDiscountedQuote().total;
+  if(total<=0){alert('Calculate at least one section before saving the quotation.');return}
+  const breakdown=document.getElementById('quoteBreakdown').textContent||'';
+  const ids=['result','vinylResult','lamResult','lvtResult','prepResult','contractResult','tileResult','upliftResult'];
+  const details=ids.map(id=>{const el=document.getElementById(id);return el&&!el.hidden?el.textContent.trim():''}).filter(Boolean).join('\\n\\n');
+  const address=(document.getElementById('jobAddress').value||'').trim();const q={id:Date.now(),customer,address,date,total,breakdown,details};
+  const saved=getSavedQuotes();
+  saved.unshift(q);
+  localStorage.setItem('cwf_saved_quotes',JSON.stringify(saved));
+  renderSavedQuotes();
+  alert('Quotation saved successfully on this device.');
+ }catch(error){
+  alert('The quotation could not be saved. Error: '+(error&&error.message?error.message:'Unknown error')+'\\n\\nTry opening the app directly in Safari.');
+ }
+}
+function renderSavedQuotes(){const list=document.getElementById('savedQuotes');if(!list)return;const saved=getSavedQuotes();if(!saved.length){list.innerHTML='<p class="muted">No quotations saved on this device yet.</p>';return}list.innerHTML=saved.map(q=>'<div class="line"><b>'+esc(q.customer)+'</b>'+ (q.address?'<br>'+esc(q.address):'') +' · '+esc(q.date)+' · <b>'+money(q.total)+'</b><br><button type="button" class="gold" onclick="downloadSavedQuote('+q.id+')">PDF</button><button type="button" class="remove" onclick="deleteSavedQuote('+q.id+')">Delete</button></div>').join('')}
+function deleteSavedQuote(id){if(!confirm('Delete this saved quotation?'))return;localStorage.setItem('cwf_saved_quotes',JSON.stringify(getSavedQuotes().filter(q=>q.id!==id)));renderSavedQuotes()}
+function downloadSavedQuote(id){const q=getSavedQuotes().find(x=>x.id===id);if(!q)return;if(!window.jspdf||!window.jspdf.jsPDF){alert('PDF tool is still loading. Please try again.');return}const doc=new window.jspdf.jsPDF({unit:'mm',format:'a4'}),margin=15,width=180,yStart=20;let y=yStart;doc.setFont('helvetica','bold');doc.setFontSize(18);doc.text('CHRIS WALLACE FLOORING LTD',margin,y);y+=7;doc.setFont('helvetica','normal');doc.setFontSize(9);doc.text('29a Garswood St, Ashton-In-Makerfield, WN4 9AF',margin,y);y+=5;doc.text('Tel: 01942 918656 | Mobile: 07908 443458',margin,y);y+=5;doc.text('Email: Chriswallaceflooring@gmail.com',margin,y);y+=8;doc.setFontSize(14);doc.text('Saved quotation',margin,y);y+=8;doc.setFont('helvetica','normal');doc.setFontSize(11);doc.text('Customer: '+q.customer,margin,y);y+=6;if(q.address){doc.text('Address: '+q.address,margin,y);y+=6}doc.text('Date: '+q.date,margin,y);y+=6;doc.setFont('helvetica','bold');doc.text('Total: '+money(q.total),margin,y);y+=10;doc.setFont('helvetica','normal');doc.setFontSize(9);const text=q.details||q.breakdown;doc.splitTextToSize(text,width).forEach(line=>{if(y>280){doc.addPage();y=20}doc.text(line,margin,y);y+=5});doc.save('CWF-quotation-'+q.customer.replace(/[^a-z0-9]+/gi,'-')+'-'+q.date+'.pdf')}
+function escapeDoc(s){return String(s).replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]))}
+function openCustomerQuote(){openQuoteDocument('customer')}
+function openFitterPlan(){openQuoteDocument('fitter')}
+function openQuoteDocument(kind){
+ const customer=(document.getElementById('customer').value||'Customer').trim(),address=(document.getElementById('jobAddress').value||'').trim(),date=document.getElementById('date').value||new Date().toISOString().slice(0,10),isCustomer=kind==='customer',q=getDiscountedQuote(),total=q.total,quoteRef='CWF-'+date.replace(/-/g,'')+'-'+String(Date.now()).slice(-5);
+ if(total<=0){alert('Calculate at least one section before creating a document.');return}
+ let body='';
+ if(isCustomer){
+  const ids=['result','vinylResult','lamResult','lvtResult','prepResult','contractResult','tileResult','upliftResult'];
+  const titles={result:'Carpet',vinylResult:'Vinyl',lamResult:'Laminate',lvtResult:'LVT',prepResult:'Floor preparation',contractResult:'Contract flooring',tileResult:'Carpet tiles',upliftResult:'Uplift / removal'};
+  const rows=ids.map(id=>{const el=document.getElementById(id);if(!el||el.hidden||!el.textContent.trim())return '';let html='<tr class="section"><td colspan="2"><b>'+titles[id]+'</b></td></tr>';if(id==='result'&&window.cwfCarpetQuoteLines){const lines=window.cwfCarpetQuoteLines;let carpetLine=lines.find(x=>x.label==='Carpet'),underlayLine=lines.find(x=>x.label==='Underlay'),plateLines=lines.filter(x=>x.label.startsWith('Standard doorplates')||x.label.startsWith('Special doorplates'));if(carpetLine)html+='<tr><td>Carpet</td><td>'+escapeDoc(carpetLine.amount)+'</td></tr>';if(underlayLine)html+='<tr><td>Underlay</td><td>'+escapeDoc(underlayLine.amount)+'</td></tr>';if(plateLines.length){const plateTotal=plateLines.reduce((sum,x)=>sum+(Number((x.amount||'').replace(/[^0-9.]/g,''))||0),0);html+='<tr><td>Doorplates</td><td>£'+plateTotal.toFixed(2)+'</td></tr>'}lines.filter(x=>!['Carpet','Underlay'].includes(x.label)&&!x.label.startsWith('Standard doorplates')&&!x.label.startsWith('Special doorplates')).forEach(line=>html+='<tr><td>'+escapeDoc(line.label)+'</td><td>'+escapeDoc(line.amount)+'</td></tr>')}else if(id==='upliftResult'){html+='<tr><td>Uplift / removal</td><td>'+escapeDoc((el.textContent.match(/£[0-9]+\\.[0-9]{2}/g)||[]).slice(-1)[0]||'')+'</td></tr>'}else{html+='<tr><td>'+titles[id]+' materials</td><td></td></tr>'}return html}).join('');
+  body='<table><thead><tr><th>Materials</th><th>Price</th></tr></thead><tbody>'+rows+(q.fittingNet>0?'<tr><td><b>Fitting</b></td><td><b>£'+q.fittingNet.toFixed(2)+'</b></td></tr>':'')+'</tbody></table><p><b>Materials total (including VAT):</b> £'+q.materialsGross.toFixed(2)+'</p><p><b>Materials value excluding VAT:</b> £'+q.materialsNet.toFixed(2)+'</p><p><b>VAT included in materials (20%):</b> £'+q.vat.toFixed(2)+'</p>'+(q.fitBefore>0?'<p><b>Fitting (separate charge):</b> £'+q.fittingNet.toFixed(2)+'</p>':'')+'<h2 class="total">Total quotation: £'+total.toFixed(2)+'</h2><p><b>Booking deposit required:</b> 25% of materials = £'+(q.materialsGross*0.25).toFixed(2)+'</p><p>Fitting is a separate charge. Balance payable on the day by cash or bank transfer.</p><p>Thank you for your enquiry.</p>';;
+ }else{
+  const ids=['result','vinylResult','lamResult','lvtResult','prepResult','contractResult','tileResult'];
+  body=ids.map(id=>{const el=document.getElementById(id);return el&&!el.hidden&&el.textContent.trim()?'<section><h2>'+({result:'Carpet cutting plan',vinylResult:'Vinyl cutting plan',lamResult:'Laminate details',lvtResult:'LVT details',prepResult:'Preparation details',contractResult:'Contract flooring details',tileResult:'Carpet tiles details',upliftResult:'Uplift / removal details'}[id])+'</h2><pre>'+escapeDoc(el.textContent)+'</pre></section>':''}).join('');
+  if(!body.trim()){alert('Calculate your flooring sections first.');return}
+  body+='<h2>Job total (incl. VAT on materials): £'+total.toFixed(2)+'</h2><p>VAT on materials: £'+q.vat.toFixed(2)+' · Fitting is a separate subcontractor charge.</p><p>Payable on the day by cash or bank transfer.</p>';
+ }
+ let emailButton='';
+ if(isCustomer){const email=(document.getElementById('customerEmail').value||'').trim(),mailSubject=encodeURIComponent('Flooring quotation - '+customer),mailBody=encodeURIComponent('FLOORING QUOTATION\nChris Wallace Flooring Ltd\n29a Garswood St, Ashton-In-Makerfield, WN4 9AF\nTel: 01942 918656 | Mobile: 07908 443458\nEmail: Chriswallaceflooring@gmail.com\n\nCustomer: '+customer+'\n'+(address?'Job address: '+address+'\n':'')+'\nMATERIALS TOTAL: £'+q.materialsGross.toFixed(2)+'\nFitting: £'+q.fittingNet.toFixed(2)+'\n\nTOTAL QUOTATION: £'+total.toFixed(2)+'\n\nBooking deposit (25% of materials): £'+(q.materialsGross*0.25).toFixed(2)+'\nBalance payable on the day by cash or bank transfer.\n\nThank you for your enquiry.\nChris Wallace Flooring');emailButton='<a class="emailButton" href="mailto:'+encodeURIComponent(email)+'?subject='+mailSubject+'&body='+mailBody+'">Email quotation</a>'}
+ const html='<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>'+ (isCustomer?'Customer quotation':'Fitter cutting plan')+'</title><style>body{font:16px Arial;color:#222;padding:20px;max-width:800px;margin:auto}h1{border-bottom:3px solid #d7b56d;padding-bottom:10px}.companyDetails{line-height:1.6;margin-bottom:18px;color:#444}.total{font-size:22px}table{width:100%;border-collapse:collapse;margin:12px 0}td,th{padding:12px;border-bottom:1px solid #ccc;text-align:left}td:last-child,th:last-child{text-align:right}.section td{background:#f5f1e8}.total{background:#f5f1e8;padding:16px}pre{white-space:pre-wrap;font:14px Arial;line-height:1.5;border-bottom:1px solid #ddd;padding-bottom:12px}.actions{margin-bottom:20px}.emailButton{display:inline-block;padding:10px 14px;margin:4px;background:#d7b56d;color:#171717;font-weight:bold;border-radius:6px;text-decoration:none}@media print{.actions{display:none}body{padding:0}}</style></head><body><div class="actions"><button onclick="window.print()">Print / Save as PDF</button>'+emailButton+'</div><h1>CHRIS WALLACE FLOORING LTD</h1><div class="companyDetails">29a Garswood St, Ashton-In-Makerfield, WN4 9AF<br>📞 01942 918656 &nbsp; | &nbsp; 📱 07908 443458<br>📧 Chriswallaceflooring@gmail.com</div><h2>'+ (isCustomer?'QUOTATION':'FITTER CUTTING PLAN')+'</h2><p><b>Quote reference:</b> '+escapeDoc(quoteRef)+'<br><b>Customer / Job:</b> '+escapeDoc(customer)+(address?'<br><b>Job address:</b> '+escapeDoc(address):'')+'<br><b>Date:</b> '+escapeDoc(date)+'</p>'+body+'</body></html>';
+ const blob=new Blob([html],{type:'text/html'}),url=URL.createObjectURL(blob),win=window.open(url,'_blank');if(!win)alert('Popup blocked. Allow popups for this website and try again.');
+}
+function getDiscountedQuote(){const matBefore=Object.values(quoteTotals).reduce((a,b)=>a+b,0)-Object.values(fittingTotals).reduce((a,b)=>a+b,0),fitRaw=Object.values(fittingTotals).reduce((a,b)=>a+b,0),roundTo=Number(document.getElementById("fitRounding")?.value||5),fitBefore=roundTo>1?Math.ceil(fitRaw/roundTo)*roundTo:fitRaw,materialPct=Math.min(100,Math.max(0,val("materialsDiscount"))),fitPct=Math.min(100,Math.max(0,val("fittingDiscount"))),materialDiscount=matBefore*materialPct/100,fitDiscount=fitBefore*fitPct/100,materialsGross=matBefore-materialDiscount,materialsNet=materialsGross/1.2,vat=materialsGross-materialsNet,fittingNet=fitBefore-fitDiscount;return {matBefore,fitBefore,materialPct,fitPct,materialDiscount,fitDiscount,materialsGross,materialsNet,vat,fittingNet,total:materialsGross+fittingNet}}
+function renderQuote(){const entries=Object.keys(quoteTotals).filter(k=>quoteTotals[k]>0),q=getDiscountedQuote();document.getElementById("quoteBreakdown").innerHTML=entries.length?entries.map(k=>'<div class="line">'+quoteLabels[k]+': <b>'+money(quoteTotals[k]-fittingTotals[k])+'</b></div>').join('')+(q.materialDiscount>0?'<div class="line">Materials discount ('+q.materialPct+'%): <b>-'+money(q.materialDiscount)+'</b></div>':'')+'<div class="line">Materials total (including VAT): <b>'+money(q.materialsGross)+'</b></div><div class="line">Materials value excluding VAT: <b>'+money(q.materialsNet)+'</b></div><div class="line">VAT included in materials (20%): <b>'+money(q.vat)+'</b></div>'+(q.fitBefore>0?'<div class="line">Fitting (separate subcontractor charge): <b>'+money(q.fittingNet)+'</b></div>':'')+(q.fitDiscount>0?'<div class="line">Fitting discount ('+q.fitPct+'%): <b>-'+money(q.fitDiscount)+'</b></div>':''):'No sections calculated yet.';document.getElementById("fullTotal").textContent="Full job total (materials VAT included): "+money(q.total);renderSavedQuotes()}
+function calcContracts(){const m=measureRooms('contractRooms'),rooms=m.rooms,area=m.area,price=val('contractPrice'),rate=val('contractFitRate'),cap=document.getElementById('contractCapCove').checked,wet=document.getElementById('contractWetRoom').checked;if(!area){alert('Enter room measurements first.');return}let linear=0,details=[];rooms.forEach(r=>{let options=[];if(r.w<=2)options.push(r.l);if(r.l<=2)options.push(r.w);if(r.w>2)options.push(Math.ceil(r.w/2)*r.l);if(r.l>2)options.push(Math.ceil(r.l/2)*r.w);const lm=Math.min(...options);linear+=lm;details.push(r.name+': '+lm.toFixed(2)+' linear metres (2m strips)')});const supplied=linear*2,material=supplied*price,fitBase=wet?area*rate:Math.max(120,area*rate),coveMaterials=cap?m.perimeter*3:0,coveFitting=cap?m.perimeter*3:0,fit=fitBase+coveFitting,surcharge=wet?100:0,total=material+fitBase+coveMaterials+coveFitting+surcharge;saveQuote('contracts',total,'Room area: '+area.toFixed(2)+'m² · 2m roll: '+linear.toFixed(2)+' linear metres ('+supplied.toFixed(2)+'m² supplied)<br>'+details.join('<br>')+'<br>Material: '+supplied.toFixed(2)+'m² × '+money(price)+'/m² = '+money(material)+'<br>Fitting: '+area.toFixed(2)+'m² × '+money(rate)+'/m² = '+money(fit)+(!wet&&area*rate<120?' (minimum £120 applied)':'')+(cap?'<br>Cap and cove materials: '+m.perimeter.toFixed(2)+' linear metres × £3 = '+money(coveMaterials)+'<br>Cap and cove fitting: '+m.perimeter.toFixed(2)+' linear metres × £3 = '+money(coveFitting):'<br>Cap and cove: not selected')+(wet?'<br>Wet room surcharge: £100':'<br>Wet room surcharge: not selected'),fitBase+coveFitting+surcharge)}
+function calcTiles(){const m=measureRooms('tileRooms'),area=m.area,pack=val('tilePack'),price=val('tilePrice'),rate=val('tileFit'),size=(document.getElementById('tileSize').value||'Not specified').trim();if(!area||!pack){alert('Enter room measurements and pack coverage.');return}const packs=Math.ceil(area/pack),supplied=packs*pack,mat=supplied*price,fit=Math.max(80,area*rate),total=mat+fit;saveQuote('tiles',total,'Tile size: '+esc(size)+' · Area: '+area.toFixed(2)+'m² · Packs: '+packs+' ('+supplied.toFixed(2)+'m² supplied) · Material: '+supplied.toFixed(2)+'m² × '+money(price)+'/m² = '+money(mat)+' · Fitting: '+area.toFixed(2)+'m² × '+money(rate)+'/m² = '+money(fit),fit)}
+function calcVinyl(){
+ const measured=measureRooms('vinylRooms'),rooms=measured.rooms,area=measured.area,price=val('vinylPrice');
+ if(!area){alert('Enter at least one room with valid width and length.');return}
+ function makePlan(roll){
+  const sorted=[...rooms].sort((a,b)=>(b.w*b.l-a.w*a.l));
+  const options=r=>[{across:r.w,run:r.l,rotated:false},{across:r.l,run:r.w,rotated:true}].filter(o=>o.across<=roll+0.00001);
+  let shelves=[];
+  if(sorted.length<=10){
+   let bestLength=Infinity,best=null;
+   function search(pos,current){
+    const used=current.reduce((s,x)=>s+x.height,0);
+    if(used>=bestLength-0.000001)return;
+    if(pos===sorted.length){bestLength=used;best=current.map(sh=>({height:sh.height,used:sh.used,items:sh.items.map(x=>({...x}))}));return}
+    const room=sorted[pos];
+    for(let i=0;i<current.length;i++)for(const o of options(room)){
+     const sh=current[i];if(o.across<=roll-sh.used+0.00001){
+      const next=current.map(x=>({height:x.height,used:x.used,items:[...x.items]}));
+      next[i].height=Math.max(next[i].height,o.run);next[i].used+=o.across;next[i].items.push({...room,...o});search(pos+1,next);
+     }
+    }
+    for(const o of options(room)){const next=current.map(x=>({height:x.height,used:x.used,items:[...x.items]}));next.push({height:o.run,used:o.across,items:[{...room,...o}]});search(pos+1,next)}
+   }
+   search(0,[]);shelves=best||[];
+  }else{
+   for(const room of sorted){
+    let best=null;
+    for(let i=0;i<shelves.length;i++)for(const o of options(room)){
+     const sh=shelves[i];if(o.across<=roll-sh.used+0.00001){
+      const score=Math.max(0,o.run-sh.height)*100000+(roll-sh.used-o.across);
+      if(!best||score<best.score)best={i,o,score};
+     }
+    }
+    if(best){const sh=shelves[best.i];sh.height=Math.max(sh.height,best.o.run);sh.used+=best.o.across;sh.items.push({...room,...best.o})}
+    else {const opts=options(room).sort((a,b)=>a.run-b.run);if(opts.length){const o=opts[0];shelves.push({height:o.run,used:o.across,items:[{...room,...o}]})}}
+   }
+  }
+  const placed=shelves.flatMap(s=>s.items);
+  return {roll,shelves,placed,total:shelves.reduce((s,sh)=>s+sh.height,0)};
+ }
+ const plans=[2,3,4].map(makePlan).filter(p=>p.placed.length===rooms.length);
+ if(!plans.length){alert('At least one room is too wide for a 4m roll in either direction. Check the measurements or consider a different solution.');return}
+ plans.sort((a,b)=>a.roll-b.roll||a.total-b.total);
+ const plan=plans[0],supplied=plan.total*plan.roll,waste=Math.max(0,supplied-area);
+ const material=supplied*price,fit=document.getElementById('vinylFittingEnabled').checked?Math.max(60,area*5):0,total=material+fit;
+ const cuts=plan.shelves.map((sh,i)=>'<div class="line"><b>Cut '+(i+1)+': '+sh.height.toFixed(2)+' linear metres · '+plan.roll+'m roll width</b> · '+sh.items.map(r=>esc(r.name)+' '+r.across.toFixed(2)+'m × '+r.run.toFixed(2)+'m'+(r.rotated?' (turned)':'')).join(' + ')+' · spare width '+Math.max(0,plan.roll-sh.used).toFixed(2)+'m</div>').join('');
+ saveQuote('vinyl',total,'<b>Selected '+plan.roll+'m roll</b> · '+plan.total.toFixed(2)+' linear metres<br>Room area: '+area.toFixed(2)+'m² · Vinyl supplied: '+supplied.toFixed(2)+'m² · Estimated waste: '+waste.toFixed(2)+'m²<br>'+cuts+'Vinyl: '+supplied.toFixed(2)+'m² × '+money(price)+'/m² = '+money(material)+' · Fitting: '+(fit?money(fit)+' (£5 per room m², £60 minimum)':'not included'),fit);
+}
+function calcLaminate(){const measured=measureRooms('lamRooms'),area=measured.area,per=measured.perimeter,pack=val('lamPackArea'),m2Price=val('lamM2Price'),underlayM2Price=val('lamUnderlayM2Price'),fitRate=val('lamFitRate'),includeBeading=document.getElementById('lamBeading').checked,waste=document.getElementById('lamWaste').checked?1.2:1,packArea=area*waste;if(!area||!pack){alert('Enter floor area and laminate pack coverage.');return}const packs=Math.ceil(packArea/pack),purchasedArea=packs*pack,mat=purchasedArea*m2Price,under=area*underlayM2Price,beads=includeBeading?Math.ceil(per/2.4):0,beadCost=beads*12,fit=Math.max(8,area)*fitRate,total=mat+under+beadCost+fit;saveQuote('laminate',total,'Room area: '+area.toFixed(2)+'m² · Pack calculation area: '+packArea.toFixed(2)+'m²'+(waste>1?' (20% waste included)':'')+' · Laminate: '+packs+' packs ('+purchasedArea.toFixed(2)+'m² purchased) × '+money(m2Price)+'/m² = '+money(mat)+' · Underlay: '+area.toFixed(2)+'m² × '+money(underlayM2Price)+'/m² = '+money(under)+' · Beading: '+(includeBeading?beads+' sticks × £12 = '+money(beadCost):'not selected')+' · Fitting: '+money(fit)+' ('+money(fitRate)+'/m², 8m² minimum)',fit)}
+function calcLvt(){const area=measureRooms('lvtRooms').area,pack=val('lvtPackArea'),m2Price=val('lvtM2Price'),rate=val('lvtFitRate'),waste=document.getElementById('lvtWaste').checked?1.1:1,packArea=area*waste;if(!area||!pack){alert('Enter LVT area and pack coverage.');return}const packs=Math.ceil(packArea/pack),purchasedArea=packs*pack,mat=purchasedArea*m2Price,fit=area*rate,total=mat+fit;saveQuote('lvt',total,'Room area: '+area.toFixed(2)+'m² · Pack calculation area: '+packArea.toFixed(2)+'m²'+(waste>1?' (10% waste included)':'')+' · LVT: '+packs+' packs ('+purchasedArea.toFixed(2)+'m² purchased) × '+money(m2Price)+'/m² = '+money(mat)+' · Fitting: '+area.toFixed(2)+'m² × '+money(rate)+' = '+money(fit),fit)}
+document.getElementById('prepDirectMode').addEventListener('change',function(){document.getElementById('prepRoomEntry').hidden=this.checked;document.getElementById('prepDirectEntry').hidden=!this.checked});
+function calcPrep(){const direct=document.getElementById('prepDirectMode').checked,area=direct?(Number(document.getElementById('prepDirectArea').value)||0):measureRooms('prepRooms').area,units=Math.floor(val('dpmUnits')),screedEnabled=document.getElementById('screedEnabled').checked,glueEnabled=document.getElementById('glueEnabled').checked,glueArea=area,screed=screedEnabled&&area?Math.max(80,area*17.5):0,dpm=units*200,glue=glueEnabled?glueArea*2:0,plySheets4=document.getElementById('ply4mm').checked?Math.ceil(area/2.88):0,plyCost4=plySheets4*2.88*18,plySheets6=document.getElementById('ply6mm').checked?Math.ceil(area/2.88):0,plyCost6=plySheets6*2.88*20,total=screed+dpm+glue+plyCost4+plyCost6;if(!area&&!units){alert('Enter preparation area or DPM units.');return}saveQuote('prep',total,'Preparation area: '+area.toFixed(2)+'m²'+(direct?' (entered directly)':' (from room measurements)')+' · Screed: '+(screedEnabled?money(screed)+' (£17.50/m², £80 minimum)':'not selected')+' · DPM: '+units+' units = '+money(dpm)+' · Glue: '+(glueEnabled?glueArea.toFixed(2)+'m² × £2 = '+money(glue):'not selected')+' · 4mm ply: '+(plySheets4?plySheets4+' full sheets ('+(plySheets4*2.88).toFixed(2)+'m²) = '+money(plyCost4):'not selected')+' · 6mm ply: '+(plySheets6?plySheets6+' full sheets ('+(plySheets6*2.88).toFixed(2)+'m²) = '+money(plyCost6):'not selected'))}
+const upliftRates={carpet:{rate:3,min:40,name:'Carpet'},vinyl:{rate:3,min:40,name:'Vinyl'},laminate:{rate:5,min:80,name:'Laminate'},lvt:{rate:6,min:100,name:'LVT / Safety flooring'},tiles:{rate:3,min:50,name:'Carpet tiles'}};let upliftItems=[];function addUpliftItem(){upliftItems.push({id:Date.now()+Math.random(),type:'carpet',area:''});renderUpliftItems()}function renderUpliftItems(){const box=document.getElementById('upliftItems');box.innerHTML=upliftItems.map(x=>'<div class="card" style="padding:10px"><div class="grid"><div><label>Flooring type</label><select data-up="type" data-id="'+x.id+'"><option value="carpet">Carpet (£3/m², min £40)</option><option value="vinyl">Vinyl (£3/m², min £40)</option><option value="laminate">Laminate (£5/m², min £80)</option><option value="lvt">LVT / Safety flooring (£6/m², min £100)</option><option value="tiles">Carpet tiles (£3/m², min £50)</option></select></div><div><label>Area (m²)</label><input data-up="area" data-id="'+x.id+'" type="number" min="0" step=".01" placeholder="Enter m²" value="'+x.area+'"></div></div><button type="button" class="remove" onclick="removeUpliftItem('+x.id+')">Remove</button></div>').join('');box.querySelectorAll('[data-up]').forEach(e=>{const item=upliftItems.find(x=>String(x.id)===e.dataset.id);e.value=item[e.dataset.up];e.oninput=()=>item[e.dataset.up]=e.value})}function removeUpliftItem(id){upliftItems=upliftItems.filter(x=>x.id!==id);renderUpliftItems()}function calcUplift(){if(!upliftItems.length){alert('Add at least one room/flooring type.');return}let total=0,details=[];upliftItems.forEach(x=>{let area=Number(x.area)||0;if(area<=0)return;let r=upliftRates[x.type],charge=Math.max(r.min,area*r.rate);total+=charge;details.push(r.name+': '+area.toFixed(2)+'m² × £'+r.rate+'/m² = '+money(area*r.rate)+' (minimum £'+r.min+'; charge '+money(charge)+')')});if(!total){alert('Enter area for at least one uplift item.');return}quoteTotals.uplift=total;fittingTotals.uplift=total;document.getElementById('upliftResult').innerHTML=details.join('<br>')+'<br><b>Total uplift / removal: '+money(total)+'</b>';renderQuote()}
+function saveSectionPdf(sectionId,title){
+ const section=document.getElementById(sectionId);
+ if(!section){alert('Nothing to save yet. Calculate the quotation first.');return}
+ if(!window.jspdf||!window.jspdf.jsPDF){
+  alert('The PDF download service is unavailable. Opening the print option instead — choose Save as PDF or Print from your device.');
+  document.body.dataset.printSection=sectionId;
+  document.body.dataset.printTitle=title;
+  window.print();
+  delete document.body.dataset.printSection;
+  delete document.body.dataset.printTitle;
+  return;
+ }
+ const jsPDF=window.jspdf.jsPDF,doc=new jsPDF({unit:'mm',format:'a4'});
+ const margin=15,pageWidth=180,lineHeight=6;let y=20;
+ doc.setFont('helvetica','bold');doc.setFontSize(18);doc.text('CHRIS WALLACE FLOORING',margin,y);y+=9;
+ doc.setFontSize(14);doc.text(title,margin,y);y+=9;doc.setFont('helvetica','normal');doc.setFontSize(10);
+ section.innerText.split(/\\n+/).map(x=>x.trim()).filter(Boolean).forEach(line=>{
+  doc.splitTextToSize(line,pageWidth).forEach(part=>{if(y>280){doc.addPage();y=20}doc.text(part,margin,y);y+=lineHeight});
+ });
+ const date=new Date().toISOString().slice(0,10);doc.save('CWF-'+title.toLowerCase().replace(/[^a-z0-9]+/g,'-')+'-'+date+'.pdf');
+}
+function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+
+// Roll optimiser: isolated, reliable click handler
+const optimizerButton=document.getElementById('runOptimizer');
+const optimizerCard=document.getElementById('rollOptimizer');
+optimizerCard.hidden=false;
+optimizerButton.onclick=function(ev){
+ ev.preventDefault();ev.stopPropagation();
+ const rooms=[...document.querySelectorAll('#rooms .room')].map(r=>({name:r.querySelector('.name')?.value||'Room',w:Number(r.querySelector('.w')?.value),l:Number(r.querySelector('.l')?.value)})).filter(r=>r.w>0&&r.l>0);
+ const out=document.getElementById('optimizerResults');
+ if(!rooms.length){out.innerHTML='<p>Enter room measurements and calculate first.</p>';return}
+ const unitPrice=Number(document.getElementById('price').value)||0;
+ const options=rooms.map((r,i)=>{const arr=[];[4,5].forEach(roll=>[{across:r.w,run:r.l},{across:r.l,run:r.w}].forEach(o=>{if(o.across<=roll)arr.push({roll,run:o.run,sqm:roll*o.run,price:roll*o.run*unitPrice})}));const best=[4,5].map(w=>arr.filter(x=>x.roll===w).sort((x,y)=>x.sqm-y.sqm)[0]).filter(Boolean);return {room:r,idx:i,options:best,selected:best.sort((x,y)=>x.price-y.price)[0]}});
+ let choice='original';const originalTotal=quoteTotals.carpet||0,originalFit=fittingTotals.carpet||0,originalResult=document.getElementById('result').innerHTML,originalLines=window.cwfCarpetQuoteLines||null;
+ const applyChoice=()=>{const sqm=options.reduce((s,r)=>s+(r.selected?.sqm||0),0),carpetMat=sqm*unitPrice;if(choice==='optimised'){const underlayOn=document.getElementById('underlayEnabled').checked,underlayAmt=underlayOn?(rooms.reduce((s,r)=>s+r.w*r.l,0)*(Number(document.getElementById('underlayPrice').value)||0)):0;quoteTotals.carpet=carpetMat+underlayAmt+originalFit;fittingTotals.carpet=originalFit;window.cwfCarpetQuoteLines=[{label:'Carpet',amount:'£'+carpetMat.toFixed(2)}];if(underlayOn)window.cwfCarpetQuoteLines.push({label:'Underlay',amount:'£'+underlayAmt.toFixed(2)});const standardCount=Math.max(0,Number(document.getElementById('standardPlates').value)||0),specialCount=Math.max(0,Number(document.getElementById('specialPlates').value)||0);if(standardCount)window.cwfCarpetQuoteLines.push({label:'Standard doorplates ('+standardCount+')',amount:'£'+(standardCount*5).toFixed(2)});if(specialCount)window.cwfCarpetQuoteLines.push({label:'Special doorplates ('+specialCount+')',amount:'£'+(specialCount*15).toFixed(2)});document.getElementById('result').innerHTML='Carpet: £'+carpetMat.toFixed(2)+'<br><b>Section total: '+money(quoteTotals.carpet)+'</b>';}else{quoteTotals.carpet=originalTotal;document.getElementById('result').innerHTML=originalResult;window.cwfCarpetQuoteLines=originalLines;}renderQuote();};
+ const redraw=()=>{const sqm=options.reduce((s,r)=>s+(r.selected?.sqm||0),0),carpet=sqm*unitPrice;
+ out.innerHTML='<div class="card"><label><b>Which price should go into the final quotation?</b><select id="optimizerQuoteChoice" style="width:100%;padding:14px;font-size:16px"><option value="original">Original calculator price</option><option value="optimised">Optimiser price</option></select></label>'+options.map(r=>'<div style="margin:12px 0;padding:10px;border-bottom:1px solid #ddd"><b>'+esc(r.room.name)+'</b>'+r.options.map(o=>'<button type="button" data-oi="'+r.idx+'" data-ow="'+o.roll+'" style="width:100%;padding:12px;margin:6px 0;white-space:normal;text-align:left;background:'+(r.selected.roll===o.roll?'#d7bd7d':'#eee')+';color:#222;border:1px solid #aaa;border-radius:8px">'+(r.selected.roll===o.roll?'✓ SELECTED — ':'')+o.roll+'m roll | '+o.run.toFixed(2)+'m length | '+o.sqm.toFixed(2)+'m² | £'+o.price.toFixed(2)+'</button>').join('')+'</div>').join('')+'<p><b>Optimiser carpet total: £'+carpet.toFixed(2)+'</b></p><p>Choose Original or Optimiser above, then create the quote.</p>';
+ out.querySelector('#optimizerQuoteChoice').value=choice;out.querySelector('#optimizerQuoteChoice').onchange=e=>{choice=e.target.value;applyChoice();};
+ out.querySelectorAll('[data-oi]').forEach(btn=>btn.onclick=()=>{const row=options[Number(btn.dataset.oi)];row.selected=row.options.find(o=>o.roll===Number(btn.dataset.ow));redraw();if(choice==='optimised')applyChoice();});
+ };
+ redraw();
 };
-window.cwfPreviewNotes=function(){
- const box=document.getElementById('notesImportText'),preview=document.getElementById('notesPreview'),btn=document.getElementById('importNotes');
- const toM=(n,u)=>{n=Number(n);u=(u||'').toLowerCase();if(u==='mm')return n/1000;if(u==='cm')return n/100;if(!u&&n>=100)return n/1000;return n;};
- const re=/(\d+(?:\.\d+)?)\s*(mm|cm|m)?\s*[x×]\s*(\d+(?:\.\d+)?)\s*(mm|cm|m)?/gi;
- const out=[];for(const line of box.value.split(/[\n;]+/)){let match,arr=[];while((match=re.exec(line))){arr.push([toM(match[1],match[2]),toM(match[3],match[4])]);}re.lastIndex=0;
-  if(arr.length){let name=(line.match(/^([A-Za-z][A-Za-z0-9 '\/-]{0,30})/)||[])[1]||'Room';name=name.replace(/\b(mm|cm|m)\b/ig,'').trim();arr.forEach((p,i)=>out.push({name:i?name+' - extra section':name,w:p[0],l:p[1],src:line}));}}
- preview.innerHTML='';if(!out.length){preview.innerHTML='<p>No measurements recognised. Example: Lounge 6.9 x 3.1</p>';btn.hidden=true;return;}
- preview.innerHTML='<div style="padding:12px;border:1px solid #ddd;border-radius:8px"><b>Review before importing</b>'+out.map((r,i)=>'<p>'+ (i+1)+'. '+r.name+' — '+r.w.toFixed(2)+' × '+r.l.toFixed(2)+'m ('+(r.w*r.l).toFixed(2)+'m²)</p>').join('')+'</div>';
- btn.hidden=false;window.cwfParsedNotes=out;
+
+document.getElementById('rollOptimizer').hidden=false;
+
+// Simple dimension drawing and stairs calculator
+(function(){
+const saved=[];let windersN=0,currentPolygon=null,sketchPts=[],drawing=false,sketchFinished=false;
+const drawModeEl=document.getElementById('drawMode'),rectEntryEl=document.getElementById('rectEntry'),wallEntryEl=document.getElementById('wallEntry');function syncDrawingMode(){const isWalls=drawModeEl.value==='walls';rectEntryEl.hidden=isWalls;wallEntryEl.hidden=!isWalls;}drawModeEl.addEventListener('change',syncDrawingMode);drawModeEl.addEventListener('input',syncDrawingMode);syncDrawingMode();
+const sketchCanvas=document.getElementById('sketchCanvas'),sketchCtx=sketchCanvas.getContext('2d');
+function sketchDraw(){sketchCtx.clearRect(0,0,sketchCanvas.width,sketchCanvas.height);sketchCtx.strokeStyle='#d7b56d';sketchCtx.lineWidth=5;sketchCtx.lineJoin='round';sketchCtx.lineCap='round';if(sketchPts.length){sketchCtx.beginPath();sketchCtx.moveTo(...sketchPts[0]);sketchPts.forEach(p=>sketchCtx.lineTo(...p));if(sketchFinished)sketchCtx.closePath();sketchCtx.stroke();sketchPts.forEach((p,i)=>{sketchCtx.beginPath();sketchCtx.fillStyle='#ffffff';sketchCtx.arc(p[0],p[1],12,0,Math.PI*2);sketchCtx.fill();sketchCtx.strokeStyle='#d7b56d';sketchCtx.lineWidth=4;sketchCtx.stroke();sketchCtx.fillStyle='#171717';sketchCtx.font='bold 22px sans-serif';sketchCtx.textAlign='center';sketchCtx.textBaseline='middle';sketchCtx.fillText(String(i+1),p[0],p[1]);});}else{sketchCtx.fillStyle='#fff';sketchCtx.font='24px sans-serif';sketchCtx.textAlign='center';sketchCtx.fillText('TAP HERE TO START',sketchCanvas.width/2,sketchCanvas.height/2);}}
+function canvasPoint(e){let r=sketchCanvas.getBoundingClientRect();return [(e.clientX-r.left)*sketchCanvas.width/r.width,(e.clientY-r.top)*sketchCanvas.height/r.height];}
+// Reliable tap-to-place corners replaces freehand tracing (which was generating duplicate points).
+function addSketchPointFromEvent(e){if(sketchFinished)return;if(e.cancelable)e.preventDefault();const p=canvasPoint(e);
+ if(!sketchPts.length){sketchPts=[p];sketchDraw();return;}
+ const last=sketchPts[sketchPts.length-1];
+ if(sketchPts.length>=3&&Math.hypot(p[0]-sketchPts[0][0],p[1]-sketchPts[0][1])<44){sketchFinished=true;sketchDraw();return;}
+ const dx=p[0]-last[0],dy=p[1]-last[1];const snapped=Math.abs(dx)>=Math.abs(dy)?[p[0],last[1]]:[last[0],p[1]];
+ if(Math.hypot(snapped[0]-last[0],snapped[1]-last[1])>12){sketchPts.push(snapped);sketchDraw();}
+}
+// Robust iOS touch/mouse drawing input: touch + pointer + click fallbacks.
+sketchCanvas.style.pointerEvents='auto';sketchCanvas.style.touchAction='none';
+sketchCanvas.style.userSelect='none';sketchCanvas.style.webkitUserSelect='none';
+sketchCanvas.style.webkitTapHighlightColor='transparent';
+let touchHandledAt=0;
+function handleCanvasTouch(e){
+ const t=(e.changedTouches&&e.changedTouches[0])||(e.touches&&e.touches[0]);
+ if(!t)return;
+ if(e.cancelable)e.preventDefault();
+ touchHandledAt=Date.now();
+ addSketchPointFromEvent({clientX:t.clientX,clientY:t.clientY,preventDefault:()=>{}});
+}
+sketchCanvas.addEventListener('touchstart',handleCanvasTouch,{passive:false,capture:true});
+sketchCanvas.addEventListener('pointerdown',e=>{
+ if(e.pointerType==='touch'&&Date.now()-touchHandledAt<900)return;
+ if(e.cancelable)e.preventDefault();
+ addSketchPointFromEvent(e);
+},{passive:false});
+sketchCanvas.addEventListener('mousedown',e=>{if(Date.now()-touchHandledAt<900)return;if(e.cancelable)e.preventDefault();addSketchPointFromEvent(e);});
+sketchCanvas.addEventListener('click',e=>{if(Date.now()-touchHandledAt<900)return;addSketchPointFromEvent(e);});
+sketchDraw();
+clearSketch.onclick=()=>{sketchPts=[];sketchFinished=false;wallRows.innerHTML='';currentPolygon=null;sketchDraw();wallShapePreview.innerHTML='';};
+function simplifySketch(points,tolerance=22){if(points.length<3)return points;const keep=new Set([0,points.length-1]);function distanceToLine(p,a,b){let dx=b[0]-a[0],dy=b[1]-a[1],den=dx*dx+dy*dy;if(!den)return Math.hypot(p[0]-a[0],p[1]-a[1]);let t=Math.max(0,Math.min(1,((p[0]-a[0])*dx+(p[1]-a[1])*dy)/den));return Math.hypot(p[0]-(a[0]+t*dx),p[1]-(a[1]+t*dy));}function recurse(a,b){let max=tolerance,idx=-1;for(let i=a+1;i<b;i++){let d=distanceToLine(points[i],points[a],points[b]);if(d>max){max=d;idx=i;}}if(idx>=0){keep.add(idx);recurse(a,idx);recurse(idx,b);}}recurse(0,points.length-1);return points.filter((p,i)=>keep.has(i));}
+function simplifyOrthogonalCorners(pts){let out=pts.map(p=>[...p]);let changed=true;while(changed&&out.length>3){changed=false;for(let i=0;i<out.length;i++){const a=out[(i+out.length-1)%out.length],b=out[i],d=out[(i+1)%out.length];if((Math.abs(a[0]-b[0])<3&&Math.abs(b[0]-d[0])<3)||(Math.abs(a[1]-b[1])<3&&Math.abs(b[1]-d[1])<3)){out.splice(i,1);changed=true;break;}}}return out;}
+function straightenPoints(pts){let n=pts.length,edges=[];for(let i=0;i<n;i++){let a=pts[i],b=pts[(i+1)%n],dx=b[0]-a[0],dy=b[1]-a[1];edges.push(Math.abs(dx)>=Math.abs(dy)?'H':'V');}let out=pts.map(p=>[...p]);for(let pass=0;pass<8;pass++){for(let i=0;i<n;i++){let prev=(i+n-1)%n,next=i;let x=out[i][0],y=out[i][1];if(edges[prev]==='H'&&edges[next]==='V')out[i]=[out[(i+n-1)%n][0],out[(i+1)%n][1]];else if(edges[prev]==='V'&&edges[next]==='H')out[i]=[out[(i+1)%n][0],out[(i+n-1)%n][1]];else if(edges[prev]==='H'&&edges[next]==='H')out[i]=[x,(out[(i+n-1)%n][1]+out[(i+1)%n][1])/2];else out[i]=[(out[(i+n-1)%n][0]+out[(i+1)%n][0])/2,y];}}return out;}
+function drawSketchNumbers(pts){sketchDraw();sketchCtx.strokeStyle='#d7b56d';sketchCtx.lineWidth=5;sketchCtx.lineJoin='round';sketchCtx.beginPath();sketchCtx.moveTo(...pts[0]);pts.forEach(p=>sketchCtx.lineTo(...p));sketchCtx.closePath();sketchCtx.stroke();sketchCtx.fillStyle='#fff';sketchCtx.font='bold 22px sans-serif';pts.forEach((p,i)=>{sketchCtx.beginPath();sketchCtx.arc(p[0],p[1],16,0,Math.PI*2);sketchCtx.fillStyle='#d7b56d';sketchCtx.fill();sketchCtx.fillStyle='#111';sketchCtx.fillText(String(i+1),p[0]-6,p[1]+7);});}
+function simplifyClosedSketch(raw,tolerance=22){
+ let pts=raw.map(p=>[p[0],p[1]]);
+ // Remove consecutive duplicates and the duplicate end point when the user closes the outline.
+ pts=pts.filter((p,i)=>i===0||Math.hypot(p[0]-pts[i-1][0],p[1]-pts[i-1][1])>5);
+ if(pts.length>2&&Math.hypot(pts[0][0]-pts[pts.length-1][0],pts[0][1]-pts[pts.length-1][1])<35)pts.pop();
+ if(pts.length<3)return pts;
+ // Split the closed path at the point furthest from the start, simplify each arc independently.
+ let far=1,maxD=0;for(let i=1;i<pts.length;i++){let d=Math.hypot(pts[i][0]-pts[0][0],pts[i][1]-pts[0][1]);if(d>maxD){maxD=d;far=i;}}
+ const a=pts.slice(0,far+1),b=pts.slice(far).concat([pts[0]]);
+ const sa=simplifySketch(a,tolerance),sb=simplifySketch(b,tolerance);
+ let out=sa.concat(sb.slice(1,-1));
+ // Drop near duplicates and near-collinear points on the closed path.
+ let changed=true;while(changed&&out.length>3){changed=false;for(let i=0;i<out.length;i++){const prev=out[(i+out.length-1)%out.length],p=out[i],next=out[(i+1)%out.length];if(Math.hypot(p[0]-prev[0],p[1]-prev[1])<12||Math.hypot(p[0]-next[0],p[1]-next[1])<12){out.splice(i,1);changed=true;break;}const dx1=p[0]-prev[0],dy1=p[1]-prev[1],dx2=next[0]-p[0],dy2=next[1]-p[1];if(Math.abs(dx1*dy2-dy1*dx2)/(Math.hypot(dx1,dy1)*Math.hypot(dx2,dy2)||1)<.12){out.splice(i,1);changed=true;break;}}}
+ return out;
+}
+finishSketch.onclick=()=>{if(sketchPts.length<3){alert('Tap at least 3 corners to draw the room outline.');return;}let pts=sketchPts.map(p=>[...p]);
+// The tap tool already creates orthogonal edges. Remove a repeated closing point and tiny accidental edges.
+if(pts.length>2&&Math.hypot(pts[0][0]-pts[pts.length-1][0],pts[0][1]-pts[pts.length-1][1])<34)pts.pop();
+let changed=true;while(changed&&pts.length>3){changed=false;for(let i=0;i<pts.length;i++){let j=(i+1)%pts.length;if(Math.hypot(pts[j][0]-pts[i][0],pts[j][1]-pts[i][1])<14){if(j===0)pts.splice(i,1);else pts.splice(j,1);changed=true;break;}}}
+if(pts.length<3){alert('Not enough corners remain. Clear drawing and tap each corner again.');return;}
+sketchPts=pts;sketchFinished=true;drawSketchNumbers(pts);wallRows.innerHTML='';pts.forEach((p,i)=>{let d=document.createElement('div');d.className='drawRoom wallRow';d.innerHTML='<label><b>Wall '+(i+1)+'</b> (corner '+(i+1)+' to '+((i+1)%pts.length+1)+')</label><input class="wallLen" type="number" min=".01" step=".01" placeholder="Optional — estimate automatically">';wallRows.appendChild(d);});wallShapePreview.innerHTML='<b>'+pts.length+' corners / walls detected</b><p>Tap-based outline accepted. Enter actual wall measurements.</p>';currentPolygon=pts.map(p=>[p[0],p[1]]);sketchDraw();};
+function polygonArea(pts){let a=0;for(let i=0;i<pts.length;i++){let p=pts[i],q=pts[(i+1)%pts.length];a+=p[0]*q[1]-q[0]*p[1]}return Math.abs(a)/2}
+function drawWallShape(pts){let xs=pts.map(p=>p[0]),ys=pts.map(p=>p[1]),minX=Math.min(...xs),maxX=Math.max(...xs),minY=Math.min(...ys),maxY=Math.max(...ys),w=maxX-minX,h=maxY-minY,scale=Math.min(300/(w||1),190/(h||1)),pad=30,coords=pts.map(p=>[(p[0]-minX)*scale+pad,(p[1]-minY)*scale+pad]),path=coords.map((p,i)=>(i?'L':'M')+p[0]+','+p[1]).join(' ')+' Z',labels=coords.map((p,i)=>{let q=coords[(i+1)%coords.length],mx=(p[0]+q[0])/2,my=(p[1]+q[1])/2,dist=Math.hypot(q[0]-p[0],q[1]-p[1]);return '<text x="'+mx+'" y="'+(my-7)+'" fill="#d7b56d" font-size="12" text-anchor="middle">'+(dist/scale).toFixed(2)+'m</text>'}).join('');wallShapePreview.innerHTML='<svg viewBox="0 0 '+(w*scale+pad*2)+' '+(h*scale+pad*2)+'" width="100%" style="max-height:260px"><path d="'+path+'" fill="#d7b56d33" stroke="#d7b56d" stroke-width="3"/>'+labels+'</svg>';currentPolygon=pts.map(p=>[p[0]-minX,p[1]-minY]);drawArea.textContent=polygonArea(currentPolygon).toFixed(2)+'m² (sketch estimate)';drawPerimeter.textContent='Enter wall measurements';}
+const drawWidthEl=document.getElementById('drawWidth'),drawLengthEl=document.getElementById('drawLength'),drawRoomNameEl=document.getElementById('drawRoomName'),simpleShapeEl=document.getElementById('simpleRoomShape'),drawAreaEl=document.getElementById('drawArea'),drawPerimeterEl=document.getElementById('drawPerimeter');
+function preview(){const w=Number(drawWidthEl.value)||0,l=Number(drawLengthEl.value)||0,sh=simpleShapeEl;if(!w||!l){sh.style.width='80%';sh.style.height='150px';sh.textContent='Enter dimensions';drawAreaEl.textContent='—';drawPerimeterEl.textContent='—';return;}let ratio=w/l,ww,hh;if(ratio>1){ww=90;hh=Math.max(25,90/ratio)}else{hh=90;ww=Math.max(25,90*ratio)}sh.style.width=ww+'%';sh.style.height=hh+'%';sh.textContent=(drawRoomNameEl.value||'Room')+' '+w.toFixed(2)+' × '+l.toFixed(2)+'m';drawAreaEl.textContent=(w*l).toFixed(2)+'m²';drawPerimeterEl.textContent=(2*(w+l)).toFixed(2)+'m'}
+[drawWidthEl,drawLengthEl,drawRoomNameEl].forEach(el=>el.addEventListener('input',preview));preview();
+drawSaveRoom.onclick=()=>{
+ let w=+drawWidth.value,l=+drawLength.value,shape=null,area=null,name=drawRoomName.value||'Room '+(saved.length+1);
+ if(drawMode.value==='walls'){
+  if(!sketchFinished||!currentPolygon){alert('Draw the shape and press Finish drawing first.');return;}
+  const pts=currentPolygon, entered=[...wallRows.querySelectorAll('.wallLen')].map(x=>x.value.trim()===''?null:+x.value);
+  if(entered.length!==pts.length||entered.some(v=>v!==null&&(!Number.isFinite(v)||v<=0))){alert('Enter valid positive wall measurements.');return;}
+  const edgeInfo=pts.map((p,i)=>{const q=pts[(i+1)%pts.length],dx=q[0]-p[0],dy=q[1]-p[1];if(Math.abs(dx)<4&&Math.abs(dy)<4)return null;return {axis:Math.abs(dx)>=Math.abs(dy)?'x':'y',dir:Math.abs(dx)>=Math.abs(dy)?Math.sign(dx):Math.sign(dy),pix:Math.abs(Math.abs(dx)>=Math.abs(dy)?dx:dy)};});
+  if(edgeInfo.some(e=>!e)){alert('The drawing has a very short or unclear wall. Please redraw it.');return;}
+  // Scale the drawn outline from entered measurements. Missing walls use the sketch proportions.
+  const axisScale={x:[],y:[]};
+  edgeInfo.forEach((e,i)=>{if(entered[i]!==null)axisScale[e.axis].push(entered[i]/e.pix);});
+  const allScales=[...axisScale.x,...axisScale.y];
+  if(!allScales.length){alert('Enter at least one wall measurement to scale the drawing into metres.');return;}
+  const globalScale=allScales.reduce((a,b)=>a+b,0)/allScales.length;
+  const sx=axisScale.x.length?axisScale.x.reduce((a,b)=>a+b,0)/axisScale.x.length:globalScale;
+  const sy=axisScale.y.length?axisScale.y.reduce((a,b)=>a+b,0)/axisScale.y.length:globalScale;
+  const lengths=entered.map((v,i)=>v===null?edgeInfo[i].pix*(edgeInfo[i].axis==='x'?sx:sy):v);
+  // Build a closed, straight-sided polygon using axis-specific sketch scaling.
+  shape=[[0,0]];
+  for(let i=0;i<pts.length;i++){
+   const e=edgeInfo[i],v=lengths[i],prev=shape[shape.length-1];
+   shape.push(e.axis==='x'?[prev[0]+e.dir*v,prev[1]]:[prev[0],prev[1]+e.dir*v]);
+  }
+  const close=shape[shape.length-1],err=Math.hypot(close[0],close[1]);
+  if(err>0.01){alert('The wall measurements do not close accurately enough (closure error '+err.toFixed(3)+'m). Opposite walls must match. Please correct the measurements before saving so the cutting plan does not split the landing incorrectly.');return;}
+  shape.pop();
+  const minX=Math.min(...shape.map(p=>p[0])),minY=Math.min(...shape.map(p=>p[1]));
+  shape=shape.map(p=>[p[0]-minX,p[1]-minY]);
+  area=polygonArea(shape);w=Math.max(...shape.map(p=>p[0]));l=Math.max(...shape.map(p=>p[1]));
+  if(area<=0||w<=0||l<=0){alert('This drawing produces an invalid area. Redraw it.');return;}
+  currentPolygon=shape;
+  wallShapePreview.innerHTML='<p><b>Drawing scaled from measurements.</b> Missing walls estimated from sketch proportions. Estimated area: '+area.toFixed(2)+'m².</p>';
+ }else{
+  if(!w||!l||w<=0||l<=0){alert('Enter dimensions or draw a wall shape.');return;}
+ }
+ saved.push({name,w,l,shape,area,geometryVerified:!!shape});
+ drawRoomName.value='Room '+(saved.length+1);currentPolygon=null;render();
+};drawDeleteAll.onclick=()=>{saved.length=0;render()};
+function decomposeOrthogonalPolygon(poly){
+ if(!poly||poly.length<3)return [];
+ const xs=[...new Set(poly.map(p=>Number(p[0].toFixed(5))))].sort((a,b)=>a-b);
+ const strips=[];
+ for(let i=0;i<xs.length-1;i++){
+  const x1=xs[i],x2=xs[i+1],xm=(x1+x2)/2;
+  if(x2-x1<1e-5)continue;
+  const ys=[];
+  for(let j=0;j<poly.length;j++){
+   const a=poly[j],b=poly[(j+1)%poly.length];
+   if((a[0]<=xm&&b[0]>xm)||(b[0]<=xm&&a[0]>xm)){
+    ys.push(a[1]+(xm-a[0])*(b[1]-a[1])/(b[0]-a[0]));
+   }
+  }
+  ys.sort((a,b)=>a-b);
+  for(let k=0;k+1<ys.length;k+=2){
+   if(ys[k+1]-ys[k]>1e-5)strips.push({x1,x2,y1:ys[k],y2:ys[k+1]});
+  }
+ }
+ // Merge adjacent vertical slabs with matching top/bottom boundaries.
+ const rects=[];
+ strips.forEach(s=>{
+  const found=rects.find(r=>Math.abs(r.x2-s.x1)<1e-4&&Math.abs(r.y1-s.y1)<1e-4&&Math.abs(r.y2-s.y2)<1e-4);
+  if(found)found.x2=s.x2;else rects.push({...s});
+ });
+ return rects.map(r=>({w:r.x2-r.x1,l:r.y2-r.y1,area:(r.x2-r.x1)*(r.y2-r.y1)})).filter(r=>r.w>0.02&&r.l>0.02);
+}
+drawExport.onclick=()=>{
+ const cutItems=[];
+ // Import ordinary saved rooms and non-stair pieces first.
+ saved.forEach(r=>{
+  const stairKind=/stair|bullnose|winder|half landing|1\/2 landing/i.test(r.kind||r.name);
+  if(stairKind)return; // stair cuts are read directly from the current form below to avoid lost/stale saved state
+  if(r.shape&&r.shape.length>=3){ // Keep an irregular room/landing as ONE carpet piece; use its bounding dimensions for roll placement, not decomposed rectangles.
+ // Orient the landing so the pile runs along the 2.5m direction: 2.0m across the roll, 2.5m length.
+ cutItems.push({name:r.name+' (single shaped piece)',w:Number(r.w),l:Number(r.l),kind:'Irregular shaped piece',fixedPile:true,shape:r.shape,area:Number(r.area)||polygonArea(r.shape)});
+}
+  else cutItems.push({name:r.name,w:Number(r.w),l:Number(r.l),kind:r.kind||'Room',fixedPile:true});
+ });
+ // Standard stairs: import directly from the form, even if Add stairs to site plan wasn't pressed.
+ const q=Math.max(0,Math.floor(Number(document.getElementById('stairQty').value)||0)),sw=Number(document.getElementById('stairWidth').value)||0,sl=Number(document.getElementById('stairLength').value)||0;
+ if(q>0&&(!sw||!sl)){alert('Enter stair width and cut length before importing.');return;}
+ // Combine groups of five stairs into continuous pile-direction strips. This lets strips sit beside a landing rather than wasting a separate roll section for every tread.
+ for(let n=0;n<q;n++)cutItems.push({name:'Stair '+(n+1),w:sw,l:sl,kind:'Standard stair',fixedPile:true,stairCount:1});
+ const bull=document.getElementById('bullnoseEnabled').checked,bq=bull?Math.max(0,Math.floor(Number(document.getElementById('bullnoseQty').value)||0)):0,bw=Number(document.getElementById('bullnoseWidth').value)||0,bl=Number(document.getElementById('bullnoseLength').value)||0;
+ if(bq>0&&(!bw||!bl)){alert('Enter bullnose width and cut length before importing.');return;}
+ for(let i=0;i<bq;i++)cutItems.push({name:'Bullnose '+(i+1),w:bw,l:bl,kind:'Bullnose',fixedPile:true});
+ document.querySelectorAll('#winderRows .drawRoom').forEach((row,i)=>{const w=Number(row.querySelector('.ww').value)||0,l=Number(row.querySelector('.wl').value)||0;if(w>0&&l>0)cutItems.push({name:'Winder '+(i+1),w,l,kind:'Winder',fixedPile:true});});
+ document.querySelectorAll('#landingRows .drawRoom').forEach((row,i)=>{const w=Number(row.querySelector('.landingW').value)||0,l=Number(row.querySelector('.landingL').value)||0;if(w>0&&l>0)cutItems.push({name:'1/2 Landing '+(i+1),w,l,kind:'Half landing',fixedPile:true});});
+ saved.filter(r=>/odd-shaped piece/i.test(r.kind||r.name)).forEach(r=>cutItems.push({name:r.name,w:Number(r.w),l:Number(r.l),kind:r.kind||'Odd-shaped piece',fixedPile:false}));
+ if(!cutItems.length){alert('Add and save at least one room or enter stair measurements.');return;}
+ rooms.innerHTML='';
+ cutItems.forEach(item=>{addRoom();const row=rooms.lastElementChild;if(!row)return;row.querySelector('.name').value=item.name;row.querySelector('.w').value=Number(item.w).toFixed(2);row.querySelector('.l').value=Number(item.l).toFixed(2);row.dataset.cwfFixedPile=item.fixedPile?'true':'false';row.dataset.cwfKind=item.kind||'';if(item.shape)row.dataset.cwfShape=JSON.stringify(item.shape);if(item.area)row.dataset.cwfArea=String(item.area);row.querySelectorAll('input').forEach(x=>x.removeAttribute('readonly'));});
+ showPage('carpet');const result=document.getElementById('result');result.hidden=false;document.getElementById('calc').click();setTimeout(()=>{result.scrollIntoView({behavior:'smooth',block:'start'});},250);
+ alert('Imported '+cutItems.length+' pieces into the cutting planner, including '+(q+bq+document.querySelectorAll('#winderRows .drawRoom').length+document.querySelectorAll('#landingRows .drawRoom').length)+' stair/landing entries.');
+};drawPrint.onclick=()=>{if(!saved.length){alert('Save rooms first');return;}let win=window.open('','_blank');if(!win)return;win.document.write('<h1>Site measurements</h1><table border=1 cellpadding=8><tr><th>Room</th><th>Width</th><th>Length</th><th>Area</th></tr>'+saved.map(r=>'<tr><td>'+esc(r.name)+'</td><td>'+r.w.toFixed(2)+'</td><td>'+r.l.toFixed(2)+'</td><td>'+(Number(r.area)||r.w*r.l).toFixed(2)+'</td></tr>').join('')+'</table>');win.document.close();win.print()};
+let wc=0;addWinder.onclick=()=>{let d=document.createElement('div');d.className='drawRoom';d.innerHTML='<b>Winder '+(++wc)+'</b><div class="grid"><div><label>Width (m)</label><input class="ww" type="number" step=".01"></div><div><label>Cut length (m)</label><input class="wl" type="number" step=".01"></div></div><button class="remove" type="button">Remove</button>';d.querySelector('button').onclick=()=>d.remove();winderRows.appendChild(d)};
+bullnoseEnabled.onchange=()=>bullnoseQty.disabled=!bullnoseEnabled.checked;
+calcStairs.onclick=()=>{let total=0,lines=[];let q=+stairQty.value||0,w=+stairWidth.value||0,l=+stairLength.value||0;if(q&&w&&l){total+=q*w*l;lines.push('Standard: '+q+' × '+w+' × '+l+'m = '+(q*w*l).toFixed(2)+'m²')}let bq=bullnoseEnabled.checked?(+bullnoseQty.value||0):0,bw=+bullnoseWidth.value||0,bl=+bullnoseLength.value||0;if(bq&&bw&&bl){total+=bq*bw*bl;lines.push('Bullnose: '+bq+' × '+bw+' × '+bl+'m = '+(bq*bw*bl).toFixed(2)+'m²')}document.querySelectorAll('#winderRows .drawRoom').forEach((r,i)=>{let ww=+r.querySelector('.ww').value||0,wl=+r.querySelector('.wl').value||0;if(ww&&wl){total+=ww*wl;lines.push('Winder '+(i+1)+': '+ww+' × '+wl+'m = '+(ww*wl).toFixed(2)+'m²')}});if(!total){alert('Enter stair measurements and quantities');return;}stairsResult.innerHTML=lines.join('<br>')+'<br><b>Total stair carpet: '+total.toFixed(2)+'m²</b>'+(+price.value?' · Material at current carpet price: £'+(total*(+price.value)).toFixed(2):'')};
+printStairs.onclick=()=>{if(!stairsResult.innerText){alert('Calculate first');return;}let win=window.open('','_blank');if(win){win.document.write('<h1>Stairs cutting sheet</h1>'+stairsResult.innerHTML);win.document.close();win.print()}};
+document.getElementById("bullnoseEnabled").onchange=()=>document.getElementById("bullnoseQty").disabled=!document.getElementById("bullnoseEnabled").checked;
+document.getElementById("addWinder").onclick=()=>{const row=document.createElement("div");row.className="drawRoom";row.innerHTML="<b>Winder</b><div class='grid'><div><label>Width (m)</label><input class='ww' type='number' step='.01'></div><div><label>Cut length (m)</label><input class='wl' type='number' step='.01'></div></div><button type='button' class='remove'>Remove</button>";row.querySelector("button").onclick=()=>row.remove();document.getElementById("winderRows").appendChild(row)};
+document.getElementById("saveStairs").onclick=function(){
+ const q=Number(document.getElementById("stairQty").value)||0,w=Number(document.getElementById("stairWidth").value)||0,l=Number(document.getElementById("stairLength").value)||0;
+ const bull=document.getElementById("bullnoseEnabled").checked,bq=bull?(Number(document.getElementById("bullnoseQty").value)||0):0,bw=Number(document.getElementById("bullnoseWidth").value)||0,bl=Number(document.getElementById("bullnoseLength").value)||0;
+ const target=document.getElementById("stairsSummary");let added=0;
+ if(q>0&&(!w||!l)){alert("Enter both stair width and cut length before saving.");return}
+ if(bq>0&&(!bw||!bl)){alert("Enter bullnose width and cut length before saving.");return}
+ for(let i=0;i<q;i++){saved.push({name:"Stair "+(i+1),w,l,kind:"Standard stair",fixedPile:true,area:w*l});added++}
+ for(let i=0;i<bq;i++){saved.push({name:"Bullnose "+(i+1),w:bw,l:bl,kind:"Bullnose",fixedPile:true,area:bw*bl});added++}
+ document.querySelectorAll("#winderRows .drawRoom").forEach((row,i)=>{const ww=Number(row.querySelector(".ww").value)||0,ll=Number(row.querySelector(".wl").value)||0;if(ww>0&&ll>0){saved.push({name:"Winder "+(i+1),w:ww,l:ll,kind:"Winder",fixedPile:true,area:ww*ll});added++}});
+ if(!added){alert("Enter stair quantities and sizes first.");return}
+ target.textContent="SUCCESS: "+added+" stair cuts saved. Site plan now contains "+saved.length+" total pieces.";
+ render();
+ alert(added+" stair cuts saved to the site plan. You should now see each Stair, Bullnose and Winder listed below.");
+};
+
+// CWF drawing extension: multiple half-landings and odd-shaped cuts.
+const landingRows=document.getElementById('landingRows'),oddPieceRows=document.getElementById('oddPieceRows');
+let landingCount=0,oddPieceCount=0;
+document.getElementById('addLanding').onclick=()=>{const n=++landingCount,row=document.createElement('div');row.className='drawRoom';row.innerHTML='<b>1/2 Landing '+n+'</b><div class="grid"><div><label>Width (m)</label><input class="landingW" type="number" min=".01" step=".01"></div><div><label>Cut length (m)</label><input class="landingL" type="number" min=".01" step=".01"></div></div><button type="button" class="remove">Remove</button>';row.querySelector('button').onclick=()=>row.remove();landingRows.appendChild(row);};
+document.getElementById('addOddPiece').onclick=()=>{const n=++oddPieceCount,row=document.createElement('div');row.className='drawRoom';row.innerHTML='<b>Odd-shaped piece '+n+'</b><div class="grid"><div><label>Piece name</label><input class="oddName" placeholder="Bay / alcove / cupboard / etc"></div><div><label>Cut width (m)</label><input class="oddW" type="number" min=".01" step=".01"></div><div><label>Cut length (m)</label><input class="oddL" type="number" min=".01" step=".01"></div><div><label>Quantity</label><input class="oddQ" type="number" min="1" step="1" value="1"></div></div><button type="button" class="remove">Remove</button>';row.querySelector('button').onclick=()=>row.remove();oddPieceRows.appendChild(row);};
+const oldSaveStairs=document.getElementById('saveStairs').onclick;
+document.getElementById('saveStairs').onclick=oldSaveStairs;
+document.getElementById('saveLandings').onclick=()=>{let added=0;for(const row of landingRows.querySelectorAll('.drawRoom')){const w=Number(row.querySelector('.landingW').value)||0,l=Number(row.querySelector('.landingL').value)||0;if(w>0&&l>0){saved.push({name:'1/2 Landing '+(++added),w,l,kind:'Half landing',fixedPile:true,area:w*l});}else{alert('Complete both measurements for each half landing.');return;}}if(!added){alert('Add and measure at least one half landing.');return;}render();alert(added+' half landing(s) added to the site plan.');};
+document.getElementById('saveOddPieces').onclick=()=>{let added=0;for(const row of oddPieceRows.querySelectorAll('.drawRoom')){const name=row.querySelector('.oddName').value.trim()||'Odd-shaped piece '+(added+1),w=Number(row.querySelector('.oddW').value)||0,l=Number(row.querySelector('.oddL').value)||0,q=Math.max(1,Math.floor(Number(row.querySelector('.oddQ').value)||1));if(w>0&&l>0){for(let i=0;i<q;i++){saved.push({name:q>1?name+' '+(i+1):name,w,l,kind:'Odd-shaped piece',fixedPile:false,area:w*l});added++;}}else if(row.querySelector('.oddW').value||row.querySelector('.oddL').value){alert('Complete width and length for each odd-shaped piece.');return;}}if(!added){alert('Add and measure at least one odd-shaped piece.');return;}render();alert(added+' odd-shaped cut(s) added to the site plan.');};
+})();</script>
+</body></html>window.cwfImportNotes=function(){
+ const rows=window.cwfParsedNotes||[];if(!rows.length){window.cwfPreviewNotes();return;}
+ if(typeof window.addRoom!=='function'||typeof window.showPage!=='function'){alert('The room-entry system has not loaded correctly. Refresh the app and try again.');return;}
+ rows.forEach(r=>{window.addRoom();const row=window.list.lastElementChild;if(!row){return;}const name=row.querySelector('.name'),w=row.querySelector('.w'),l=row.querySelector('.l');if(name)name.value=r.name;if(w)w.value=r.w.toFixed(2);if(l)l.value=r.l.toFixed(2);});
+ window.showPage('carpet');const result=document.getElementById('result');if(result)result.hidden=true;alert('Imported '+rows.length+' measurement(s). Check them before calculating.');
 };
 window.cwfClearNotes=function(){document.getElementById('notesImportText').value='';document.getElementById('notesImage').value='';document.getElementById('notesPreview').innerHTML='';document.getElementById('importNotes').hidden=true;document.getElementById('notesOcrStatus').textContent='Paste text, or choose a screenshot to read its text.';window.cwfParsedNotes=[];};
 </script><section class="card"><h2>Room measurements</h2><p class="muted">Enter the finished room width and length in metres. The planner tries both directions and groups rooms together where they fit across the roll.</p><div id="rooms"></div><div class="no-print"><button class="gold" id="add">+ Add room</button><button id="calc">Calculate cutting plan</button></div></section>
