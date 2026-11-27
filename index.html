@@ -243,8 +243,15 @@ document.getElementById('calc').onclick=()=>{
   return out+'</section>';
  }
  const layoutEl=document.getElementById('layout');
- const textPlan=plans.map(p=>'<div class="line"><b>'+p.roll+'m roll — '+p.total.toFixed(2)+' linear metres ('+p.shelves.length+' sections)</b>'+p.shelves.map((sh,i)=>'<p><b>Section '+(i+1)+' — '+sh.height.toFixed(2)+'m length; '+p.roll+'m roll width</b><br>'+sh.items.map(x=>esc(x.name)+' — '+x.across.toFixed(2)+'m across × '+x.run.toFixed(2)+'m long').join('<br>')+'<br>Unused width: '+Math.max(0,p.roll-sh.used).toFixed(2)+'m</p>').join('')+'</div>').join('');
- layoutEl.innerHTML='<p><b>Both roll widths compared. Recommended: '+roll+'m roll.</b></p>'+textPlan+renderRollLayout(plans.find(p=>p.roll===4))+renderRollLayout(plans.find(p=>p.roll===5));
+ try {
+   layoutEl.innerHTML='<div style="padding:10px;background:#e8f5e9;border:1px solid #4caf50;border-radius:8px;margin-bottom:10px"><b>Roll layout renderer started</b> · '+plans.length+' plans · '+raw.length+' input pieces · '+plans.map(p=>p.roll+'m: '+p.shelves.length+' sections').join(' · ')+'</div>';
+   const textPlan=plans.map(p=>'<div class="line"><b>'+p.roll+'m roll — '+p.total.toFixed(2)+' linear metres ('+p.shelves.length+' sections)</b>'+p.shelves.map((sh,i)=>'<p><b>Section '+(i+1)+' — '+sh.height.toFixed(2)+'m length; '+p.roll+'m roll width</b><br>'+sh.items.map(x=>esc(x.name)+' — '+x.across.toFixed(2)+'m across × '+x.run.toFixed(2)+'m long').join('<br>')+'<br>Unused width: '+Math.max(0,p.roll-sh.used).toFixed(2)+'m</p>').join('')+'</div>').join('');
+   const html='<p><b>Both roll widths compared. Recommended: '+roll+'m roll.</b></p>'+textPlan+renderRollLayout(plans.find(p=>p.roll===4))+renderRollLayout(plans.find(p=>p.roll===5));
+   layoutEl.innerHTML=html;
+   if(!layoutEl.innerHTML.trim())throw new Error('HTML output was empty after insertion');
+ } catch(renderError) {
+   layoutEl.innerHTML='<div style="padding:12px;background:#fff0f0;border:2px solid #c00;border-radius:8px;color:#900"><b>Roll layout error:</b><br>'+esc(String(renderError&&renderError.stack||renderError))+'</div><p><b>Diagnostic:</b> plans='+plans.length+'; raw pieces='+raw.length+'; '+plans.map(p=>p.roll+'m roll: '+p.shelves.length+' sections, '+p.placed.length+' placed, total '+p.total).join('; ')+'</p>';
+ }
  const notice=document.querySelector('.notice');
  notice.textContent=invalid.length?'These rooms do not fit either the 4m or 5m roll in either direction: '+invalid.map(r=>r.name).join(', ')+'. Check measurements or consider a different solution.':'Automatic comparison selected the option that fits the most rooms, then uses the least total carpet area. Check pile direction, pattern repeats, matching, doorway turns and fitting allowances before ordering or cutting.';
 }
