@@ -103,7 +103,7 @@ document.getElementById('calc').onclick=()=>{
  const raw=[...list.querySelectorAll('.room')].map((r,i)=>{const name=r.querySelector('.name').value.trim()||'Room '+(i+1);const fixed=r.dataset.cwfFixedPile==='true'||/\b(Landing|Stair|Bullnose|Winder)\b/i.test(name);return {name,w:Number(r.querySelector('.w').value),l:Number(r.querySelector('.l').value),index:i,fixedPile:fixed,kind:r.dataset.cwfKind||'',shape:r.dataset.cwfShape?JSON.parse(r.dataset.cwfShape):null,area:Number(r.dataset.cwfArea)||0};}).filter(r=>r.w>0&&r.l>0);
  if(!raw.length){alert('Enter at least one room with valid measurements.');return}
  function makePlan(roll){
-   const valid=raw.filter(r=>Math.min(r.w,r.l)<=roll+0.00001);
+   const valid=raw.filter(r=>(r.fixedPile||r.shape&&r.shape.length>=3)?r.w<=roll+0.00001:Math.min(r.w,r.l)<=roll+0.00001);
    const sorted=[...valid].sort((a,b)=>(b.w*b.l-a.w*a.l));
    let shelves=[];
    if(sorted.length<=10){
@@ -233,9 +233,11 @@ document.getElementById('calc').onclick=()=>{
    let svg='<svg viewBox="0 0 '+W+' '+(H+4)+'" style="width:100%;height:auto;border:1px solid #bda15e;background:#f8f6ef"><rect x="0" y="0" width="'+W+'" height="'+H+'" fill="#eee" stroke="#222"/>';
    sh.items.forEach(x=>{
     const xx=(Number(x.acrossStart)||0)*scale,ww=x.across*scale,hh=x.run*scale;
-    if(x.shape&&x.shape.length>=3){const points=x.shape.map(pt=>(xx+pt[0]*scale)+','+(pt[1]*scale)).join(' ');svg+='<polygon points="'+points+'" fill="#d7b56d" fill-opacity=".8" stroke="#80652d" stroke-width="2"/>';}
+    if(x.shape&&x.shape.length>=3){const points=x.shape.map(pt=>(xx+pt[0]*scale)+','+(pt[1]*scale)).join(' ');svg+='<polygon points="'+points+'" fill="#d7b56d" fill-opacity=".8" stroke="#80652d" stroke-width="2"/>'; }
     else svg+='<rect x="'+xx+'" y="0" width="'+ww+'" height="'+hh+'" fill="#d7b56d" fill-opacity=".65" stroke="#80652d" stroke-width="1.5"/>';
     svg+='<text x="'+(xx+ww/2)+'" y="'+(hh/2)+'" text-anchor="middle" dominant-baseline="middle" font-size="'+Math.max(8,Math.min(13,scale*.11))+'">'+esc(x.name)+'</text>';
+    // Draw nested stair cuts over the landing shape, using their actual offcut positions.
+    (x.nested||[]).forEach(n=>{const nx=xx+n.x*scale,ny=n.y*scale,nw=n.w*scale,nh=n.l*scale;svg+='<rect x="'+nx+'" y="'+ny+'" width="'+nw+'" height="'+nh+'" fill="#f5e6bd" stroke="#473719" stroke-width="1.5"/><text x="'+(nx+nw/2)+'" y="'+(ny+nh/2)+'" text-anchor="middle" dominant-baseline="middle" font-size="'+Math.max(7,Math.min(11,scale*.09))+'">'+esc(n.name)+'</text>';});
    });
    svg+='</svg>';
    html+='<div class="shelf"><b>Cut section '+(i+1)+' · '+sh.height.toFixed(2)+'m long · '+p.roll+'m roll</b>'+svg+'<div class="offcut">Unused roll width: '+Math.max(0,p.roll-sh.used).toFixed(2)+'m</div></div>';
