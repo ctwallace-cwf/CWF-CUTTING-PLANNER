@@ -244,7 +244,7 @@ document.getElementById('calc').onclick=()=>{
  }
  const layoutEl=document.getElementById('layout');
  const textPlan=plans.map(p=>'<div class="line"><b>'+p.roll+'m roll — '+p.total.toFixed(2)+' linear metres ('+p.shelves.length+' sections)</b>'+p.shelves.map((sh,i)=>'<p><b>Section '+(i+1)+' — '+sh.height.toFixed(2)+'m length; '+p.roll+'m roll width</b><br>'+sh.items.map(x=>esc(x.name)+' — '+x.across.toFixed(2)+'m across × '+x.run.toFixed(2)+'m long').join('<br>')+'<br>Unused width: '+Math.max(0,p.roll-sh.used).toFixed(2)+'m</p>').join('')+'</div>').join('');
- layoutEl.innerHTML='<p><b>Both roll widths compared. Recommended: '+roll+'m roll.</b></p>'+textPlan+renderRollLayout(plan4)+renderRollLayout(plan5);
+ layoutEl.innerHTML='<p><b>Both roll widths compared. Recommended: '+roll+'m roll.</b></p>'+textPlan+renderRollLayout(plans.find(p=>p.roll===4))+renderRollLayout(plans.find(p=>p.roll===5));
  const notice=document.querySelector('.notice');
  notice.textContent=invalid.length?'These rooms do not fit either the 4m or 5m roll in either direction: '+invalid.map(r=>r.name).join(', ')+'. Check measurements or consider a different solution.':'Automatic comparison selected the option that fits the most rooms, then uses the least total carpet area. Check pile direction, pattern repeats, matching, doorway turns and fitting allowances before ordering or cutting.';
 }
