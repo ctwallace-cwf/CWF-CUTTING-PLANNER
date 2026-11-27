@@ -228,7 +228,7 @@ document.getElementById('calc').onclick=()=>{ const __layoutDiag=document.getEle
  function renderRollLayout(p){
   if(!p)return '<div class="notice">Roll plan missing.</div>';
   const rollWidth=Number(p.roll)||4,sections=Array.isArray(p.shelves)?p.shelves:[];
-  let out='<section class="card" style="margin:12px 0;padding:12px"><h3>'+rollWidth+'m roll · '+Number(p.total||0).toFixed(2)+' linear metres</h3><p><b>Sections:</b> '+sections.length+' · <b>Pieces placed:</b> '+sections.reduce((n,s)=>n+(Array.isArray(s.items)?s.items.length:0),0)+'</p>';
+  let out='<section class="card" style="margin:12px 0;padding:12px"><h3>'+rollWidth+'m roll · '+Number(p.total||0).toFixed(2)+' linear metres</h3><p><b>Sections:</b> '+sections.length+' · <b>Pieces placed (including nested offcut cuts):</b> '+sections.reduce((n,section)=>n+(Array.isArray(section.items)?section.items.reduce((m,item)=>m+1+(Array.isArray(item.nested)?item.nested.length:0),0):0),0)+'</p>';
   if(!sections.length)return out+'<p>No cuts placed on this roll.</p></section>';
   sections.forEach((sh,i)=>{
    const length=Math.max(.01,Number(sh.height)||.01),items=Array.isArray(sh.items)?sh.items:[];
