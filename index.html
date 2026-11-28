@@ -176,23 +176,24 @@ document.getElementById('calc').onclick=()=>{ const __layoutDiag=document.getEle
      const others=placed.filter(p=>!stairKeys.has(p.index));
      const grouped=[];
      const sortedStairs=[...remainingStairs].sort((a,b)=>a.index-b.index);
-     for(let i=0;i<sortedStairs.length;i+=6){const batch=sortedStairs.slice(i,i+6),first=batch[0];grouped.push({...first,name:'Stairs '+batch[0].name.replace(/\D/g,'')+'-'+batch[batch.length-1].name.replace(/\D/g,'')+' (strip)',w:first.w,l:first.l*batch.length,run:first.l*batch.length,across:first.w,area:batch.reduce((s,p)=>s+p.w*p.l,0),indices:batch.map(p=>p.index),stairCount:batch.length,fixedPile:true,rotated:false,shape:null});}
+     for(let i=0;i<sortedStairs.length;i+=5){const batch=sortedStairs.slice(i,i+5),first=batch[0];grouped.push({...first,name:'Stairs '+batch[0].name.replace(/\D/g,'')+'-'+batch[batch.length-1].name.replace(/\D/g,'')+' (strip)',w:first.w,l:first.l*batch.length,run:first.l*batch.length,across:first.w,area:batch.reduce((s,p)=>s+p.w*p.l,0),indices:batch.map(p=>p.index),stairCount:batch.length,fixedPile:true,rotated:false,shape:null});}
      const candidates=[...others,...grouped].sort((a,b)=>(b.w*b.l-a.w*a.l));const newShelves=[];
-     candidates.forEach(item=>{const opts=item.fixedPile?[{across:item.w,run:item.l,rotated:false}]:[{across:item.w,run:item.l,rotated:false},{across:item.l,run:item.w,rotated:true}].filter(o=>o.across<=roll+1e-5);let choice=null;newShelves.forEach((sh,si)=>opts.forEach(o=>{if(o.across<=roll-sh.used+1e-5){const score=Math.max(0,o.run-sh.height)*100000+(roll-sh.used-o.across);if(!choice||score<choice.score)choice={si,o,score};}}));if(choice){const sh=newShelves[choice.si];sh.height=Math.max(sh.height,choice.o.run);sh.items.push({...item,...choice.o,acrossStart:sh.used});sh.used+=choice.o.across;}else if(opts.length){opts.sort((a,b)=>a.run-b.run);const o=opts[0];newShelves.push({height:o.run,used:o.across,items:[{...item,...o,acrossStart:0}]});}});
+     candidates.forEach(item=>{const opts=(item.fixedPile?[{across:item.w,run:item.l,rotated:false}]:[{across:item.w,run:item.l,rotated:false},{across:item.l,run:item.w,rotated:true}]).filter(o=>o.across<=roll+1e-5);let choice=null;newShelves.forEach((sh,si)=>opts.forEach(o=>{if(o.across<=roll-sh.used+1e-5){const score=Math.max(0,o.run-sh.height)*100000+(roll-sh.used-o.across);if(!choice||score<choice.score)choice={si,o,score};}}));if(choice){const sh=newShelves[choice.si];sh.height=Math.max(sh.height,choice.o.run);sh.items.push({...item,...choice.o,acrossStart:sh.used});sh.used+=choice.o.across;}else if(opts.length){opts.sort((a,b)=>a.run-b.run);const o=opts[0];newShelves.push({height:o.run,used:o.across,items:[{...item,...o,acrossStart:0}]});}});
      shelves=newShelves;placed=shelves.flatMap(s=>s.items).concat(placed.filter(p=>p.nestedInto!==undefined));
    }
    const total=shelves.reduce((sum,sh)=>sum+sh.height,0);
    const supplied=total*roll;
    const area=placed.reduce((sum,r)=>sum+(r.area||r.w*r.l),0);
-   return {roll,valid,placed,shelves,total,supplied,area,waste:Math.max(0,supplied-area),nestedIndexes:Array.from(nestedIds)};
+   const placedOriginalCount=new Set(placed.flatMap(p=>Array.isArray(p.indices)?p.indices:[p.index]).filter(i=>Number.isInteger(i))).size;
+   return {roll,valid,placed,placedOriginalCount,shelves,total,supplied,area,waste:Math.max(0,supplied-area),nestedIndexes:Array.from(nestedIds)};
  }
  const plans=[makePlan(4),makePlan(5)];
  // Prefer a plan that places every piece. For complete plans, minimise purchased
  // area/waste first, then linear metres; choose 4m only when equally efficient.
  plans.sort((a,b)=>{
-   const aComplete=a.placed.length===raw.length,bComplete=b.placed.length===raw.length;
+   const aComplete=a.placedOriginalCount===raw.length,bComplete=b.placedOriginalCount===raw.length;
    if(aComplete!==bComplete)return bComplete-aComplete;
-   if(a.placed.length!==b.placed.length)return b.placed.length-a.placed.length;
+   if(a.placedOriginalCount!==b.placedOriginalCount)return b.placedOriginalCount-a.placedOriginalCount;
    if(Math.abs(a.waste-b.waste)>0.00001)return a.waste-b.waste;
    if(Math.abs(a.total-b.total)>0.00001)return a.total-b.total;
    return a.roll-b.roll;
