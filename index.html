@@ -148,7 +148,8 @@ document.getElementById('calc').onclick=()=>{ const __layoutDiag=document.getEle
    const valid=raw.filter(r=>(r.fixedPile||r.shape&&r.shape.length>=3)?r.w<=roll+0.00001:Math.min(r.w,r.l)<=roll+0.00001);
    const sorted=[...valid].sort((a,b)=>(b.w*b.l-a.w*a.l));
    let shelves=[];
-   if(sorted.length<=10){
+   // Keep exact packing search small enough to avoid freezing phones; use the greedy placer for larger jobs.
+   if(sorted.length<=8){
      let bestLength=Infinity,bestShelves=null;
      function searchPacking(pos,current){
        const usedLength=current.reduce((sum,sh)=>sum+sh.height,0);
