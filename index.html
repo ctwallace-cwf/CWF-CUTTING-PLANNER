@@ -28,7 +28,7 @@ nav{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0}nav button{flex:1;min-widt
 <section class="card"><h2>Carpet fitting</h2><div class="grid"><div><label>Fitting charge (automatically included)</label><div style="padding:12px;border:1px solid #ddd;border-radius:8px;background:#f4f1e9">£5 per room m² · £60 minimum per room (12m²)</div></div>
 <div><label>Hall surcharge</label><label style="display:flex;align-items:center;gap:8px;font-size:15px"><input id="hallEnabled" type="checkbox" style="width:auto"> Add £30 hall surcharge</label></div><div><label>Stairs & landing</label><label style="display:flex;align-items:center;gap:8px;font-size:15px"><input id="stairsEnabled" type="checkbox" style="width:auto"> £50 surcharge (minimum £100 total fitting)</label></div><div><label>Wrap-round stairs</label><label style="display:flex;align-items:center;gap:8px;font-size:15px"><input id="wrapStairsEnabled" type="checkbox" style="width:auto"> Add £100 surcharge</label></div><div><label>Double staircase</label><label style="display:flex;align-items:center;gap:8px;font-size:15px"><input id="doubleStairsEnabled" type="checkbox" style="width:auto"> Add £80 surcharge</label></div>
 </div></section>
-<section class="card"><h2>Room measurements</h2><p class="muted">Enter the finished room width and length in metres. The planner tries both directions and groups rooms together where they fit across the roll.</p><div id="rooms"></div><div class="no-print"><button class="gold" id="add">+ Add room</button><button id="calc">Calculate cutting plan</button></div></section>
+<section class="card"><h2>Room measurements</h2><p class="muted">Enter finished room width and length in metres. The planner tries both directions and groups rooms together where they fit across the roll.</p><div class="card" style="background:#faf8f2;border-color:#d7b56d"><h3>📋 Import measurements from Notes</h3><p class="muted">Paste measurements as written. Example: Lounge 6.9 x 3.1 + 2.8 x 65cm, Hall 2.2 x 1.5. Review the preview before adding them.</p><textarea id="notesMeasurements" rows="5" placeholder="Lounge 6.9 x 3.1 + 2.8 x 65cm&#10;Hall 2.2 x 1.5" style="width:100%;padding:12px;border:1px solid #bbb;border-radius:8px;font:16px Arial;resize:vertical"></textarea><button type="button" class="gold" id="notesPreview">Preview measurements</button><div id="notesPreviewRows"></div><button type="button" class="gold" id="notesAddToPlan" hidden>Add measurements to cutting plan</button></div><div id="rooms"></div><div class="no-print"><button class="gold" id="add">+ Add room</button><button id="calc">Calculate cutting plan</button></div></section>
 <section class="card" id="result" hidden><h2>Cutting plan</h2>
 <div class="stats"><div class="stat"><span class="muted">Carpet length</span><b id="metres">—</b></div><div class="stat"><span class="muted">Carpet supplied</span><b id="supplied">—</b></div><div class="stat"><span class="muted">Room area</span><b id="roomarea">—</b></div><div class="stat"><span class="muted">Waste</span><b id="waste">—</b></div><div class="stat"><span class="muted">Materials</span><b id="grandTotal">—</b></div><div class="stat"><span class="muted">Fitting</span><b id="fittingCost">—</b></div><div class="stat"><span class="muted">Job total</span><b id="jobTotal">—</b></div></div><div hidden><span id="cost"></span><span id="underlayCost"></span><span id="plateCost"></span><span id="count"></span></div>
 <div class="card"><h3>Roll layout</h3><div id="layout"></div></div><details class="planDetails" open><summary>View detailed cutting plan &amp; room breakdown</summary><div id="cuts"></div></details>
@@ -92,6 +92,48 @@ function addRoom(){
  });
 }
 addRoom();document.getElementById('add').onclick=addRoom;document.getElementById('date').value=new Date().toISOString().slice(0,10);
+let notesPreviewItems=[];
+function notesToMetres(value,unit){
+ const n=Number(String(value).replace(',','.'));if(!Number.isFinite(n)||n<=0)return 0;
+ unit=(unit||'').toLowerCase();
+ if(unit==='mm')return n/1000;
+ if(unit==='cm')return n/100;
+ if(unit==='m')return n;
+ return n>=100?n/1000:n;
+}
+function parseNotesMeasurements(){
+ const text=document.getElementById('notesMeasurements').value||'';
+ const lines=text.split(/[\\n;]+/).map(v=>v.trim()).filter(Boolean);
+ const re=/(\\d+(?:[.,]\\d+)?)\\s*(mm|cm|m)?\\s*[x×]\\s*(\\d+(?:[.,]\\d+)?)\\s*(mm|cm|m)?/gi;
+ notesPreviewItems=[];
+ lines.forEach((line,lineIndex)=>{
+  const matches=[...line.matchAll(re)];if(!matches.length)return;
+  let name=(line.slice(0,matches[0].index).replace(/[,:\\-]+$/,'').trim()||('Room '+(lineIndex+1))).replace(/^room\\s*:?\\s*/i,'Room ');
+  matches.forEach((m,i)=>{const w=notesToMetres(m[1],m[2]),l=notesToMetres(m[3],m[4]);if(w>0&&l>0)notesPreviewItems.push({name:i?name+' - section '+(i+1):name,w,l,source:line});});
+ });
+ renderNotesPreview();
+}
+function renderNotesPreview(){
+ const box=document.getElementById('notesPreviewRows'),btn=document.getElementById('notesAddToPlan');box.innerHTML='';
+ if(!notesPreviewItems.length){box.innerHTML='<p class="notice">No measurements detected. Try using formats like 3.65 x 4.20m, 365cm x 420cm, or 3650mm x 4200mm.</p>';btn.hidden=true;return;}
+ notesPreviewItems.forEach((item,i)=>{
+  const row=document.createElement('div');row.className='drawRoom';
+  row.innerHTML='<div class="grid"><div><label>Room / section</label><input class="noteName" value="'+esc(item.name)+'"></div><div><label>Width (m)</label><input class="noteW" type="number" min=".01" step=".01" value="'+item.w.toFixed(2)+'"></div><div><label>Length (m)</label><input class="noteL" type="number" min=".01" step=".01" value="'+item.l.toFixed(2)+'"></div></div><small class="muted">Source: '+esc(item.source)+'</small>';
+  row.querySelector('.noteName').oninput=e=>item.name=e.target.value;
+  row.querySelector('.noteW').oninput=e=>item.w=Number(e.target.value);
+  row.querySelector('.noteL').oninput=e=>item.l=Number(e.target.value);
+  box.appendChild(row);
+ });
+ btn.textContent='Add '+notesPreviewItems.length+' measurement'+(notesPreviewItems.length===1?'':'s')+' to cutting plan';btn.hidden=false;
+}
+document.getElementById('notesPreview').onclick=parseNotesMeasurements;
+document.getElementById('notesAddToPlan').onclick=()=>{
+ if(!notesPreviewItems.length||notesPreviewItems.some(x=>!x.name.trim()||!(x.w>0)||!(x.l>0))){alert('Check every imported room name, width and length.');return;}
+ notesPreviewItems.forEach(item=>{addRoom();const row=list.lastElementChild;row.querySelector('.name').value=item.name;row.querySelector('.w').value=item.w.toFixed(2);row.querySelector('.l').value=item.l.toFixed(2);row.dataset.cwfFixedPile='false';row.dataset.cwfKind='Notes import';row.querySelectorAll('input').forEach(x=>x.removeAttribute('readonly'));});
+ showPage('carpet');document.getElementById('result').hidden=false;document.getElementById('calc').click();
+ document.getElementById('notesAddToPlan').hidden=true;
+ alert('Imported '+notesPreviewItems.length+' measurement(s). They are now in the cutting plan.');
+};
 ['standardPlates','specialPlates'].forEach(id=>document.getElementById(id).addEventListener('input',()=>{const s=Math.max(0,Math.floor(Number(document.getElementById('standardPlates').value)||0)),p=Math.max(0,Math.floor(Number(document.getElementById('specialPlates').value)||0)),plates=s*5+p*15;document.getElementById('plateCost').textContent='£'+plates.toFixed(2);if(document.getElementById('result').hidden){quoteTotals.carpet=plates;fittingTotals.carpet=0;window.cwfCarpetQuoteLines=[];if(s)window.cwfCarpetQuoteLines.push({label:'Standard doorplates ('+s+')',amount:'£'+(s*5).toFixed(2)});if(p)window.cwfCarpetQuoteLines.push({label:'Special doorplates ('+p+')',amount:'£'+(p*15).toFixed(2)});renderQuote();}else{document.getElementById('calc').click();}}));
 document.getElementById('calc').onclick=()=>{ const __layoutDiag=document.getElementById('layout'); if(__layoutDiag)__layoutDiag.innerHTML='<div style="padding:10px;background:#fff4d6;border:2px solid #b99b54;border-radius:8px"><b>Cutting calculation started…</b></div>'; try {
  const price=Number(document.getElementById('price').value)||0;
