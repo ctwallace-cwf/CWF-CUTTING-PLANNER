@@ -104,21 +104,19 @@ function notesToMetres(value,unit){
 function parseNotesMeasurements(){
  const text=document.getElementById('notesMeasurements').value||'';
  const lines=text.split(/[\\n;]+/).map(v=>v.trim()).filter(Boolean);
- const re=/(\\d+(?:[.,]\\d+)?)\\s*(mm|cm|m)?\\s*[x×]\\s*(\\d+(?:[.,]\\d+)?)\\s*(mm|cm|m)?/gi;
- // Stair-related entries may be abbreviated in fitter notes (Sta, ST, STS)
- // and include winders, steps, treads, risers, bullnoses or landings.
- const stairRe=/\\b(?:st|sts|sta|step(?:s)?|stair(?:s|case|cases)?|winder(?:s)?|landing(?:s)?|bullnose|tread(?:s)?|riser(?:s)?|half\\s*landing)\\b/i;
+ // Match each explicit dimension pair independently; tolerate spaces, decimals and x/×.
+ const pairPattern=/(\\d+(?:[.,]\\d+)?)\\s*(mm|cm|m)?\\s*[x×]\\s*(\\d+(?:[.,]\\d+)?)\\s*(mm|cm|m)?/gi;
+ const stairPattern=/\\b(?:st|sts|sta|step(?:s)?|stair(?:s|case|cases)?|winder(?:s)?|landing(?:s)?|bullnose|tread(?:s)?|riser(?:s)?|half\\s*landing|1\\s*\\/\\s*2)\\b/i;
  notesPreviewItems=[];
  lines.forEach((line,lineIndex)=>{
-  const matches=[...line.matchAll(re)];if(!matches.length)return;
-  const isStairLine=stairRe.test(line);
-  let name=(line.slice(0,matches[0].index).replace(/[, :\\-]+$/,'').trim()||('Room '+(lineIndex+1)));
-  if(/^room\\b/i.test(name))name=name.replace(/^room\\s*:?[\\s]*/i,'Room ');
+  const matches=[...line.matchAll(pairPattern)];
+  if(!matches.length)return;
+  const isStairLine=stairPattern.test(line);
+  let name=line.slice(0,matches[0].index).replace(/[, :\\-]+$/,'').trim()||('Room '+(lineIndex+1));
+  if(isStairLine && !name)name='Stair';
   matches.forEach((m,i)=>{
-   // All stair, step, winder and landing dimensions are entered in centimetres
-   // unless the fitter explicitly includes units on a non-stair measurement.
-   const w=isStairLine?notesToMetres(m[1],'cm'):notesToMetres(m[1],m[2]);
-   const l=isStairLine?notesToMetres(m[3],'cm'):notesToMetres(m[3],m[4]);
+   const w=notesToMetres(m[1],isStairLine?'cm':m[2]);
+   const l=notesToMetres(m[3],isStairLine?'cm':m[4]);
    if(w>0&&l>0)notesPreviewItems.push({name:isStairLine?(i?name+' - piece '+(i+1):name):(i?name+' - section '+(i+1):name),w,l,source:line,stair:isStairLine});
   });
  });
